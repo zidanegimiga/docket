@@ -1,4 +1,4 @@
-import { TICKET_STATUSES, type TicketStatus } from "@docket/contracts";
+import { TICKET_STATUSES, type TicketStats, type TicketStatus } from "@docket/contracts";
 import Link from "next/link";
 
 import { listHref } from "../../list-query";
@@ -8,6 +8,7 @@ import styles from "./StatusFilter.module.css";
 interface StatusFilterProps {
   current: TicketStatus | undefined;
   limit: number;
+  stats?: TicketStats | undefined;
 }
 
 const options: { value: TicketStatus | undefined; label: string }[] = [
@@ -15,7 +16,11 @@ const options: { value: TicketStatus | undefined; label: string }[] = [
   ...TICKET_STATUSES.map((value) => ({ value, label: statusLabels[value] })),
 ];
 
-export function StatusFilter({ current, limit }: StatusFilterProps) {
+function countFor(stats: TicketStats, status: TicketStatus | undefined): number {
+  return status ? stats.byStatus[status] : stats.total;
+}
+
+export function StatusFilter({ current, limit, stats }: StatusFilterProps) {
   return (
     <nav aria-label="Filter by status">
       <ul className={styles.filters}>
@@ -29,6 +34,7 @@ export function StatusFilter({ current, limit }: StatusFilterProps) {
               scroll={false}
             >
               {label}
+              {stats && <span className={styles.count}>{countFor(stats, value)}</span>}
             </Link>
           </li>
         ))}

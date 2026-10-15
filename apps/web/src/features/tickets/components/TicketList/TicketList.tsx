@@ -7,6 +7,7 @@ import { Button } from "@/shared/components/Button";
 import { Pagination } from "@/shared/components/Pagination";
 
 import { useTickets } from "../../hooks/useTickets";
+import { useTicketStats } from "../../hooks/useTicketStats";
 import { statusLabels } from "../../labels";
 import { listHref, parseListQuery } from "../../list-query";
 import { StatusFilter } from "../StatusFilter";
@@ -23,11 +24,12 @@ export function TicketList() {
   const searchParams = useSearchParams();
   const query = parseListQuery(Object.fromEntries(searchParams));
   const { data, isPending, isError, isPlaceholderData, refetch } = useTickets(query);
+  const { data: stats } = useTicketStats();
 
   return (
     <div className={styles.list}>
       <div className={styles.toolbar}>
-        <StatusFilter current={query.status} limit={query.limit} />
+        <StatusFilter current={query.status} limit={query.limit} stats={stats} />
         {data && (
           <p className={styles.count}>
             {data.pagination.total} {data.pagination.total === 1 ? "ticket" : "tickets"}

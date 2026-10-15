@@ -54,8 +54,8 @@ describe("TicketList", () => {
 
     expect(await screen.findByText("No closed tickets.")).toBeInTheDocument();
     expect(requestedStatus).toBe("closed");
-    expect(screen.getByRole("link", { name: "Closed" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "All" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: /^Closed/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /^All/ })).not.toHaveAttribute("aria-current");
   });
 
   it("explains a page past the end without hiding the pager", async () => {
