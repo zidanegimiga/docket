@@ -30,8 +30,8 @@ export const createTicketSchema = z.strictObject({
     .string()
     .trim()
     .max(DESCRIPTION_MAX_LENGTH)
-    .optional()
-    .transform((value) => value || undefined),
+    .transform((value) => value || undefined)
+    .optional(),
   priority: ticketPrioritySchema.default("medium"),
 });
 
