@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalPassThroughEnv": ["NEXT_TELEMETRY_DISABLED"],
   "tasks": {
     "db:generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
@@ -7,6 +8,7 @@
     },
     "build": {
       "dependsOn": ["^build", "db:generate"],
+      "env": ["API_URL"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
