@@ -1,4 +1,9 @@
-import type { CreateTicketBody, TicketPriority, TicketStatus } from "@docket/contracts";
+import type {
+  CreateTicketBody,
+  ListTicketsQuery,
+  TicketPriority,
+  TicketStatus,
+} from "@docket/contracts";
 
 export interface TicketEntity {
   id: number;
@@ -10,6 +15,12 @@ export interface TicketEntity {
   updatedAt: Date;
 }
 
+export interface TicketPage {
+  items: TicketEntity[];
+  total: number;
+}
+
 export interface TicketRepository {
   create(data: CreateTicketBody): Promise<TicketEntity>;
+  list(query: ListTicketsQuery): Promise<TicketPage>;
 }

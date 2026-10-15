@@ -1,7 +1,7 @@
-import type { CreateTicketBody } from "@docket/contracts";
+import type { CreateTicketBody, ListTicketsQuery } from "@docket/contracts";
 
-import type { PrismaClient } from "../../generated/prisma/client.js";
-import type { TicketEntity, TicketRepository } from "./ticket.types.js";
+import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
+import type { TicketEntity, TicketPage, TicketRepository } from "./ticket.types.js";
 
 export class PrismaTicketRepository implements TicketRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -14,5 +14,24 @@ export class PrismaTicketRepository implements TicketRepository {
         priority: data.priority,
       },
     });
+  }
+
+  async list({ status, page, limit }: ListTicketsQuery): Promise<TicketPage> {
+    const where: Prisma.TicketWhereInput = status ? { status } : {};
+
+    const [items, total] = await this.db.$transaction(
+      [
+        this.db.ticket.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        this.db.ticket.count({ where }),
+      ],
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+
+    return { items, total };
   }
 }
