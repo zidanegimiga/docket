@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { TicketService } from "../../src/modules/tickets/ticket.service.js";
+import { NotFoundError } from "../../src/shared/errors/not-found.error.js";
 import { InMemoryTicketRepository } from "../helpers/in-memory-ticket.repository.js";
 import { RecordingMonitor } from "../helpers/recording.monitor.js";
 
@@ -62,6 +63,35 @@ describe("TicketService", () => {
         data: [],
         pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
       });
+    });
+  });
+
+  describe("update", () => {
+    it("changes only the submitted fields", async () => {
+      const created = await service.create({ title: "VPN drops", priority: "low" });
+
+      const updated = await service.update(created.id, { priority: "high" });
+
+      expect(updated).toMatchObject({ id: created.id, status: "open", priority: "high" });
+    });
+
+    it("throws NotFoundError for an unknown ticket", async () => {
+      const error = await service.update(404, { status: "closed" }).catch((caught) => caught);
+
+      expect(error).toBeInstanceOf(NotFoundError);
+      expect(error).toMatchObject({ statusCode: 404, message: "Ticket 404 was not found" });
+    });
+
+    it("records a status metric only when a status is submitted", async () => {
+      const created = await service.create({ title: "Projector", priority: "medium" });
+      monitor.metrics.length = 0;
+
+      await service.update(created.id, { priority: "high" });
+      await service.update(created.id, { status: "closed" });
+
+      expect(monitor.metrics).toEqual([
+        { name: "tickets.status_updated", value: 1, tags: { status: "closed" } },
+      ]);
     });
   });
 });
