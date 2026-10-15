@@ -1,10 +1,12 @@
 import {
   ticketListSchema,
   ticketSchema,
+  ticketStatsSchema,
   type CreateTicketInput,
   type ListTicketsQuery,
   type Ticket,
   type TicketList,
+  type TicketStats,
   type UpdateTicketBody,
 } from "@docket/contracts";
 
@@ -29,4 +31,9 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
 export async function updateTicket(id: number, data: UpdateTicketBody): Promise<Ticket> {
   const result = await request<unknown>(`/tickets/${id}`, { method: "PATCH", body: data });
   return ticketSchema.parse(result);
+}
+
+export async function getTicketStats(signal?: AbortSignal): Promise<TicketStats> {
+  const data = await request<unknown>("/tickets/stats", { ...(signal && { signal }) });
+  return ticketStatsSchema.parse(data);
 }
