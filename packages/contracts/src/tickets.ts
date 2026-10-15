@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pageQuerySchema, paginatedSchema } from "./pagination.js";
+
 export const TICKET_STATUSES = ["open", "in_progress", "closed"] as const;
 export const TICKET_PRIORITIES = ["low", "medium", "high"] as const;
 
@@ -37,3 +39,14 @@ export const createTicketSchema = z.strictObject({
 
 export type CreateTicketInput = z.input<typeof createTicketSchema>;
 export type CreateTicketBody = z.output<typeof createTicketSchema>;
+
+export const listTicketsQuerySchema = pageQuerySchema.extend({
+  status: ticketStatusSchema.optional(),
+});
+
+export type ListTicketsInput = z.input<typeof listTicketsQuerySchema>;
+export type ListTicketsQuery = z.output<typeof listTicketsQuerySchema>;
+
+export const ticketListSchema = paginatedSchema(ticketSchema);
+
+export type TicketList = z.infer<typeof ticketListSchema>;
