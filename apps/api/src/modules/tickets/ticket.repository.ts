@@ -1,7 +1,7 @@
 import type { CreateTicketBody, ListTicketsQuery, UpdateTicketBody } from "@docket/contracts";
 
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
-import type { TicketEntity, TicketPage, TicketRepository } from "./ticket.types.js";
+import type { StatusCounts, TicketEntity, TicketPage, TicketRepository } from "./ticket.types.js";
 
 const RECORD_NOT_FOUND = "P2025";
 
@@ -55,5 +55,14 @@ export class PrismaTicketRepository implements TicketRepository {
       }
       throw error;
     }
+  }
+
+  async countByStatus(): Promise<StatusCounts> {
+    const groups = await this.db.ticket.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    });
+
+    return Object.fromEntries(groups.map((group) => [group.status, group._count._all]));
   }
 }

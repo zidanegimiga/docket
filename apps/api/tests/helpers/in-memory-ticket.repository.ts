@@ -1,6 +1,7 @@
 import type { CreateTicketBody, ListTicketsQuery, UpdateTicketBody } from "@docket/contracts";
 
 import type {
+  StatusCounts,
   TicketEntity,
   TicketPage,
   TicketRepository,
@@ -45,5 +46,13 @@ export class InMemoryTicketRepository implements TicketRepository {
       updatedAt: new Date(),
     });
     return ticket;
+  }
+
+  async countByStatus(): Promise<StatusCounts> {
+    const counts: StatusCounts = {};
+    for (const { status } of this.tickets) {
+      counts[status] = (counts[status] ?? 0) + 1;
+    }
+    return counts;
   }
 }

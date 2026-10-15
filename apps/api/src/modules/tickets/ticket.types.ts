@@ -21,8 +21,11 @@ export interface TicketPage {
   total: number;
 }
 
+export type StatusCounts = Partial<Record<TicketStatus, number>>;
+
 export interface TicketRepository {
   create(data: CreateTicketBody): Promise<TicketEntity>;
   list(query: ListTicketsQuery): Promise<TicketPage>;
   update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null>;
+  countByStatus(): Promise<StatusCounts>;
 }
