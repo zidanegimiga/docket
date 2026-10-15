@@ -14,6 +14,11 @@ export class TicketController {
     res.json(page);
   };
 
+  stats: RequestHandler = async (_req, res) => {
+    const stats = await this.service.stats();
+    res.json(stats);
+  };
+
   create: RequestHandler<Params, unknown, CreateTicketBody> = async (req, res) => {
     const ticket = await this.service.create(req.body);
     res.status(201).json(ticket);

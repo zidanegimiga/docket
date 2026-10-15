@@ -9,6 +9,7 @@ export function ticketRoutes(controller: TicketController): Router {
   const router = Router();
 
   router.get("/", validate({ query: listTicketsQuerySchema }), controller.list);
+  router.get("/stats", controller.stats);
   router.post("/", validate({ body: createTicketSchema }), controller.create);
   router.patch(
     "/:id",
