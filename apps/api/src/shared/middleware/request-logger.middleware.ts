@@ -6,7 +6,9 @@ import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 
 function routeLabel(req: Request): string {
   const routePath: unknown = req.route?.path;
-  return typeof routePath === "string" ? `${req.baseUrl}${routePath}` : "unmatched";
+  if (typeof routePath !== "string") return "unmatched";
+  if (routePath === "/") return req.baseUrl || "/";
+  return `${req.baseUrl}${routePath}`;
 }
 
 export function requestLogger(monitor: Monitor): RequestHandler {
