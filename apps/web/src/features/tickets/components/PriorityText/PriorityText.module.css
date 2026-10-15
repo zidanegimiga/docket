@@ -1,0 +1,16 @@
+.priority {
+  white-space: nowrap;
+}
+
+.priority[data-priority="high"] {
+  font-weight: 600;
+  color: var(--color-priority-high);
+}
+
+.priority[data-priority="medium"] {
+  color: var(--color-priority-medium);
+}
+
+.priority[data-priority="low"] {
+  color: var(--color-priority-low);
+}
