@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+import { getApiUrl } from "./src/shared/config/api-url";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${getApiUrl()}/:path*`,
+      },
+    ];
+  },
+};
 
 export default nextConfig;
