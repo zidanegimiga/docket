@@ -5,6 +5,7 @@ import {
   type ListTicketsQuery,
   type Ticket,
   type TicketList,
+  type UpdateTicketBody,
 } from "@docket/contracts";
 
 import { request } from "@/shared/api/http-client";
@@ -23,4 +24,9 @@ export async function listTickets(
 export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   const data = await request<unknown>("/tickets", { method: "POST", body: input });
   return ticketSchema.parse(data);
+}
+
+export async function updateTicket(id: number, data: UpdateTicketBody): Promise<Ticket> {
+  const result = await request<unknown>(`/tickets/${id}`, { method: "PATCH", body: data });
+  return ticketSchema.parse(result);
 }
