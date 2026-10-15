@@ -40,6 +40,17 @@ export const createTicketSchema = z.strictObject({
 export type CreateTicketInput = z.input<typeof createTicketSchema>;
 export type CreateTicketBody = z.output<typeof createTicketSchema>;
 
+export const updateTicketSchema = z
+  .strictObject({
+    status: ticketStatusSchema.optional(),
+    priority: ticketPrioritySchema.optional(),
+  })
+  .refine((data) => data.status !== undefined || data.priority !== undefined, {
+    message: "Provide a status or a priority to update",
+  });
+
+export type UpdateTicketBody = z.infer<typeof updateTicketSchema>;
+
 export const listTicketsQuerySchema = pageQuerySchema.extend({
   status: ticketStatusSchema.optional(),
 });
