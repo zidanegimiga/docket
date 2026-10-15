@@ -1,4 +1,4 @@
-import type { CreateTicketBody } from "@docket/contracts";
+import type { CreateTicketBody, ListTicketsQuery } from "@docket/contracts";
 import type { RequestHandler } from "express";
 
 import type { TicketService } from "./ticket.service.js";
@@ -7,6 +7,11 @@ type Params = Record<string, string>;
 
 export class TicketController {
   constructor(private readonly service: TicketService) {}
+
+  list: RequestHandler<Params, unknown, unknown, ListTicketsQuery> = async (req, res) => {
+    const page = await this.service.list(req.query);
+    res.json(page);
+  };
 
   create: RequestHandler<Params, unknown, CreateTicketBody> = async (req, res) => {
     const ticket = await this.service.create(req.body);
