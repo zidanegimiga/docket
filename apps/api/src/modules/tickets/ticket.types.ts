@@ -3,6 +3,7 @@ import type {
   ListTicketsQuery,
   TicketPriority,
   TicketStatus,
+  UpdateTicketBody,
 } from "@docket/contracts";
 
 export interface TicketEntity {
@@ -23,4 +24,5 @@ export interface TicketPage {
 export interface TicketRepository {
   create(data: CreateTicketBody): Promise<TicketEntity>;
   list(query: ListTicketsQuery): Promise<TicketPage>;
+  update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null>;
 }

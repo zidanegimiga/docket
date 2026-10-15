@@ -1,4 +1,4 @@
-import type { CreateTicketBody, ListTicketsQuery } from "@docket/contracts";
+import type { CreateTicketBody, ListTicketsQuery, UpdateTicketBody } from "@docket/contracts";
 
 import type {
   TicketEntity,
@@ -33,5 +33,17 @@ export class InMemoryTicketRepository implements TicketRepository {
 
     const start = (page - 1) * limit;
     return { items: matching.slice(start, start + limit), total: matching.length };
+  }
+
+  async update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null> {
+    const ticket = this.tickets.find((candidate) => candidate.id === id);
+    if (!ticket) return null;
+
+    Object.assign(ticket, {
+      ...(data.status && { status: data.status }),
+      ...(data.priority && { priority: data.priority }),
+      updatedAt: new Date(),
+    });
+    return ticket;
   }
 }

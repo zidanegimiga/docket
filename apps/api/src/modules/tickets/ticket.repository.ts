@@ -1,7 +1,9 @@
-import type { CreateTicketBody, ListTicketsQuery } from "@docket/contracts";
+import type { CreateTicketBody, ListTicketsQuery, UpdateTicketBody } from "@docket/contracts";
 
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import type { TicketEntity, TicketPage, TicketRepository } from "./ticket.types.js";
+
+const RECORD_NOT_FOUND = "P2025";
 
 export class PrismaTicketRepository implements TicketRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -33,5 +35,25 @@ export class PrismaTicketRepository implements TicketRepository {
     );
 
     return { items, total };
+  }
+
+  async update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null> {
+    try {
+      return await this.db.ticket.update({
+        where: { id },
+        data: {
+          ...(data.status && { status: data.status }),
+          ...(data.priority && { priority: data.priority }),
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === RECORD_NOT_FOUND
+      ) {
+        return null;
+      }
+      throw error;
+    }
   }
 }
