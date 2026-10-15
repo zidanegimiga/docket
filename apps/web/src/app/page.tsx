@@ -1,6 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
-import { ticketListQuery } from "@/features/tickets/api/ticket.queries";
+import { ticketListQuery, ticketStatsQuery } from "@/features/tickets/api/ticket.queries";
 import { CreateTicketForm } from "@/features/tickets/components/CreateTicketForm";
 import { TicketList } from "@/features/tickets/components/TicketList";
 import { parseListQuery } from "@/features/tickets/list-query";
@@ -13,8 +13,13 @@ interface TicketsPageProps {
 }
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
+  const query = parseListQuery(await searchParams);
   const queryClient = getQueryClient();
-  await queryClient.prefetchQuery(ticketListQuery(parseListQuery(await searchParams)));
+
+  await Promise.all([
+    queryClient.prefetchQuery(ticketListQuery(query)),
+    queryClient.prefetchQuery(ticketStatsQuery()),
+  ]);
 
   return (
     <div className={styles.layout}>
