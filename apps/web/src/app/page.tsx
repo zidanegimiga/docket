@@ -1,18 +1,28 @@
-import { Suspense } from "react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
+import { ticketListQuery } from "@/features/tickets/api/ticket.queries";
 import { CreateTicketForm } from "@/features/tickets/components/CreateTicketForm";
 import { TicketList } from "@/features/tickets/components/TicketList";
+import { parseListQuery } from "@/features/tickets/list-query";
+import { getQueryClient } from "@/shared/query/query-client";
 
 import styles from "./page.module.css";
 
-export default function TicketsPage() {
+interface TicketsPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function TicketsPage({ searchParams }: TicketsPageProps) {
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(ticketListQuery(parseListQuery(await searchParams)));
+
   return (
     <div className={styles.layout}>
       <section className={styles.tickets} aria-labelledby="tickets-heading">
         <h1 id="tickets-heading">Tickets</h1>
-        <Suspense>
+        <HydrationBoundary state={dehydrate(queryClient)}>
           <TicketList />
-        </Suspense>
+        </HydrationBoundary>
       </section>
 
       <aside className={styles.newTicket} aria-labelledby="new-ticket-heading">
