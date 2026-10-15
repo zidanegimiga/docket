@@ -34,7 +34,12 @@ export function StatusFilter({ current, limit, stats }: StatusFilterProps) {
               scroll={false}
             >
               {label}
-              {stats && <span className={styles.count}>{countFor(stats, value)}</span>}
+              {stats && (
+                <>
+                  {" "}
+                  <span className={styles.count}>{countFor(stats, value)}</span>
+                </>
+              )}
             </Link>
           </li>
         ))}
