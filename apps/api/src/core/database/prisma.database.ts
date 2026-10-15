@@ -1,8 +1,8 @@
-import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from '../../generated/prisma/client.js';
-import type { Logger } from '../logger/logger.interface.js';
-import type { DatabaseProvider } from './database.interface.js';
+import { PrismaClient } from "../../generated/prisma/client.js";
+import type { Logger } from "../logger/logger.interface.js";
+import type { DatabaseProvider } from "./database.interface.js";
 
 export class PrismaDatabaseProvider implements DatabaseProvider<PrismaClient> {
   readonly client: PrismaClient;
@@ -16,12 +16,12 @@ export class PrismaDatabaseProvider implements DatabaseProvider<PrismaClient> {
 
   async connect(): Promise<void> {
     await this.client.$connect();
-    this.logger.info('Database connected');
+    this.logger.info("Database connected");
   }
 
   async disconnect(): Promise<void> {
     await this.client.$disconnect();
-    this.logger.info('Database disconnected');
+    this.logger.info("Database disconnected");
   }
 
   async healthCheck(): Promise<boolean> {
@@ -29,7 +29,7 @@ export class PrismaDatabaseProvider implements DatabaseProvider<PrismaClient> {
       await this.client.$queryRaw`SELECT 1`;
       return true;
     } catch (error) {
-      this.logger.warn('Database health check failed', { err: error });
+      this.logger.warn("Database health check failed", { err: error });
       return false;
     }
   }

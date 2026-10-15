@@ -1,9 +1,9 @@
-import { pino, type Level, type Logger as PinoInstance } from 'pino';
+import { pino, type Level, type Logger as PinoInstance } from "pino";
 
-import type { LogContext, Logger } from './logger.interface.js';
+import type { LogContext, Logger } from "./logger.interface.js";
 
 export interface PinoLoggerOptions {
-  level: Level | 'silent';
+  level: Level | "silent";
   pretty?: boolean;
 }
 
@@ -13,7 +13,7 @@ export class PinoLogger implements Logger {
   static create({ level, pretty = false }: PinoLoggerOptions): PinoLogger {
     const instance = pino({
       level,
-      ...(pretty && { transport: { target: 'pino-pretty' } }),
+      ...(pretty && { transport: { target: "pino-pretty" } }),
     });
 
     return new PinoLogger(instance);
