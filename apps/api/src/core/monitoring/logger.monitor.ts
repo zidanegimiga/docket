@@ -9,6 +9,6 @@ export class LoggerMonitor implements Monitor {
   }
 
   recordMetric(name: string, value: number, tags: MetricTags = {}): void {
-    this.logger.info("Metric recorded", { metric: name, value, tags });
+    this.logger.debug("Metric recorded", { metric: name, value, tags });
   }
 }
