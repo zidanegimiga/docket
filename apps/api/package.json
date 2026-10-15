@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@docket/tsconfig": "*",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.20.5",
     "dotenv": "^18.0.8",
     "pino-pretty": "^13.2.0",
@@ -24,6 +25,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "express": "^5.3.0",
     "pino": "^10.4.0",
     "zod": "^4.6.7"
   }
