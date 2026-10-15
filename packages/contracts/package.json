@@ -16,6 +16,9 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
   "devDependencies": {
     "@docket/tsconfig": "*",
     "typescript": "~6.0.3"
