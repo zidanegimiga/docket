@@ -30,7 +30,7 @@ export function createContainer(env: Env): Container {
   const app = createApp({
     logger,
     monitor,
-    router: createRouter({ database }),
+    router: createRouter({ database, monitor }),
   });
 
   return { env, logger, monitor, database, app };
