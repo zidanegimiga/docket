@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { AppHeader } from "@/shared/components/AppHeader";
+
+import styles from "./layout.module.css";
 import { Providers } from "./providers";
 
 import "./globals.css";
@@ -18,7 +21,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <AppHeader />
+          <main className={styles.main}>{children}</main>
+        </Providers>
       </body>
     </html>
   );
