@@ -94,4 +94,25 @@ describe("TicketService", () => {
       ]);
     });
   });
+
+  describe("stats", () => {
+    it("reports every status with zero when there are no tickets", async () => {
+      await expect(service.stats()).resolves.toEqual({
+        total: 0,
+        byStatus: { open: 0, in_progress: 0, closed: 0 },
+      });
+    });
+
+    it("counts tickets per status and fills in statuses that have none", async () => {
+      const first = await service.create({ title: "First", priority: "low" });
+      await service.create({ title: "Second", priority: "low" });
+      await service.create({ title: "Third", priority: "low" });
+      await service.update(first.id, { status: "closed" });
+
+      await expect(service.stats()).resolves.toEqual({
+        total: 3,
+        byStatus: { open: 2, in_progress: 0, closed: 1 },
+      });
+    });
+  });
 });
