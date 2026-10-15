@@ -3,7 +3,7 @@ import type { Ticket } from "@docket/contracts";
 import { DISPLAY_TIME_ZONE, formatDateTime } from "@/shared/format/date";
 
 import { PriorityText } from "../PriorityText";
-import { StatusText } from "../StatusText";
+import { TicketStatusSelect } from "../TicketStatusSelect";
 import styles from "./TicketTable.module.css";
 
 interface TicketTableProps {
@@ -42,7 +42,7 @@ export function TicketTable({ tickets, emptyMessage, stale = false }: TicketTabl
                 )}
               </td>
               <td>
-                <StatusText status={ticket.status} />
+                <TicketStatusSelect ticket={ticket} />
               </td>
               <td>
                 <PriorityText priority={ticket.priority} />

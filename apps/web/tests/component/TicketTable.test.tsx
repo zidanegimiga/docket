@@ -1,13 +1,14 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { TicketTable } from "@/features/tickets/components/TicketTable";
 
 import { makeTicket } from "../support/fixtures";
+import { renderWithClient } from "../support/render";
 
 describe("TicketTable", () => {
-  it("renders one row per ticket with readable status, priority and date", () => {
-    render(
+  it("renders one row per ticket with its status, priority and date", () => {
+    renderWithClient(
       <TicketTable
         emptyMessage="No tickets yet."
         tickets={[
@@ -33,21 +34,23 @@ describe("TicketTable", () => {
     expect(rows[0]).toHaveTextContent("14");
     expect(rows[0]).toHaveTextContent("Payroll export fails");
     expect(rows[0]).toHaveTextContent("CSV returns a 500");
-    expect(rows[0]).toHaveTextContent("In progress");
+    expect(screen.getByRole("combobox", { name: "Status for ticket #14" })).toHaveValue(
+      "in_progress",
+    );
     expect(rows[0]).toHaveTextContent("High");
     expect(rows[0]).toHaveTextContent("15 Oct 2026, 07:42");
-    expect(rows[1]).toHaveTextContent("Closed");
+    expect(screen.getByRole("combobox", { name: "Status for ticket #13" })).toHaveValue("closed");
   });
 
   it("shows the empty message instead of a table when there are no tickets", () => {
-    render(<TicketTable tickets={[]} emptyMessage="No closed tickets." />);
+    renderWithClient(<TicketTable tickets={[]} emptyMessage="No closed tickets." />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("No closed tickets.")).toBeInTheDocument();
   });
 
   it("marks the table busy while a newer page is loading", () => {
-    render(<TicketTable tickets={[makeTicket()]} emptyMessage="" stale />);
+    renderWithClient(<TicketTable tickets={[makeTicket()]} emptyMessage="" stale />);
 
     expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
   });
