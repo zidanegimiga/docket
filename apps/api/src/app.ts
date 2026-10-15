@@ -21,7 +21,7 @@ export function createApp({ logger, monitor, router }: AppDeps): Express {
 
   app.use(requestContext(logger));
   app.use(requestLogger(monitor));
-  app.use(express.json({ limit: "32kb" }));
+  app.use(express.json({ limit: "64kb" }));
 
   app.use(router);
 
