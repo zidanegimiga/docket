@@ -61,3 +61,10 @@ export type ListTicketsQuery = z.output<typeof listTicketsQuerySchema>;
 export const ticketListSchema = paginatedSchema(ticketSchema);
 
 export type TicketList = z.infer<typeof ticketListSchema>;
+
+export const ticketStatsSchema = z.object({
+  total: z.number().int().min(0),
+  byStatus: z.record(ticketStatusSchema, z.number().int().min(0)),
+});
+
+export type TicketStats = z.infer<typeof ticketStatsSchema>;
