@@ -48,8 +48,9 @@
 }
 
 .titleCell {
-  min-width: 14rem;
-  max-width: 28rem;
+  width: 100%;
+  max-width: 0;
+  min-width: 10rem;
 }
 
 .title {
