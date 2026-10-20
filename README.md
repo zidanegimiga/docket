@@ -5,6 +5,15 @@ progress, closed) and a priority (low, medium, high). The web app lists tickets 
 filter and pagination, shows how many tickets sit in each status, creates new tickets and changes
 status inline, all through a small REST API backed by PostgreSQL.
 
+| Live         | URL                                           |
+| ------------ | --------------------------------------------- |
+| Web app      | <https://docket-puce-eight.vercel.app>        |
+| API          | <https://docket-api-rfhp.onrender.com>        |
+| Health check | <https://docket-api-rfhp.onrender.com/health> |
+
+The API runs on Render's free tier and sleeps after 15 minutes without traffic. If the first page
+load is slow, the API is waking up; it takes up to a minute and is fast from then on.
+
 ## Quick start
 
 With Docker:
