@@ -1,0 +1,4 @@
+.select {
+  composes: control from "../Field/Field.module.css";
+  cursor: pointer;
+}

@@ -1,0 +1,6 @@
+dist
+coverage
+.turbo
+apps/api/src/generated
+apps/api/prisma/migrations
+package-lock.json

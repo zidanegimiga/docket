@@ -1,0 +1,27 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.priority {
+  max-width: 12rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.feedback {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.formError {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}

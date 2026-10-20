@@ -1,0 +1,42 @@
+name: Web
+
+on:
+  push:
+    branches: [main, dev]
+    paths: &web-paths
+      - "apps/web/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - "turbo.json"
+      - ".nvmrc"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths: *web-paths
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Format, typecheck, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prettier --check apps/web packages
+
+      - run: npx turbo run typecheck test build --filter=@docket/web...

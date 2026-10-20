@@ -1,0 +1,28 @@
+# Render blueprint for the API. The database lives on Neon and the web app on Vercel.
+# DATABASE_URL is entered in the Render dashboard when the blueprint is first applied.
+
+services:
+  - type: web
+    name: docket-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/**
+        - package.json
+        - package-lock.json
+        - turbo.json
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
