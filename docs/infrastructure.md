@@ -77,13 +77,41 @@ development needs nothing beyond `docker compose up -d db`.
 
 ## Deployment
 
-All on free tiers:
+All on free tiers, in or near Frankfurt so the API and the database sit in the same region.
 
-| Part     | Platform | Notes                                                                   |
-| -------- | -------- | ----------------------------------------------------------------------- |
-| Database | Neon     | Render's free Postgres expires after 30 days; Neon's free tier does not |
-| API      | Render   | Built from `apps/api/Dockerfile`, health checked on `/health`           |
-| Web      | Vercel   | `API_URL` must be set before building, since the rewrite is baked in    |
+| Part     | Platform                                            | Configuration                     |
+| -------- | --------------------------------------------------- | --------------------------------- |
+| Web      | Vercel, <https://docket-puce-eight.vercel.app>      | `apps/web/vercel.json`, `API_URL` |
+| API      | Render, <https://docket-api-rfhp.onrender.com>      | `render.yaml`, `DATABASE_URL`     |
+| Database | Neon, PostgreSQL 16, AWS Europe Central (Frankfurt) | Direct (unpooled) connection      |
+
+### API on Render
+
+`render.yaml` is a blueprint for one Docker web service built from `apps/api/Dockerfile`:
+
+- Deploys from `main`, and only after the commit's GitHub checks pass (`autoDeployTrigger:
+checksPass`), so a commit with failing tests never reaches production.
+- A build filter skips deploys for commits that do not touch the API, the shared packages or root
+  config.
+- Traffic moves to a new deploy only after `/health` returns 200, which also requires the database
+  to be reachable.
+- `DATABASE_URL` is entered in the Render dashboard and never committed. It must be Neon's direct
+  connection string, because `prisma migrate deploy` runs on start and needs a session that the
+  pooled endpoint does not provide.
 
 Render's free web services sleep after 15 minutes without traffic, and the first request after
 that can take close to a minute while the service wakes.
+
+### Web on Vercel
+
+The Vercel project's root directory is `apps/web`. `vercel.json` runs install and build from the
+repository root through Turborepo, so `@docket/contracts` is built before the app, and uses
+`turbo-ignore` to skip deployments for commits that do not affect the web app or its
+dependencies. `API_URL` points at the Render service and must be set before a build, because the
+`/api` rewrite is fixed at build time.
+
+### Database on Neon
+
+Neon's free tier does not expire, unlike Render's free PostgreSQL, which is deleted after 30 days
+plus a 14 day grace period. Neon suspends idle compute after five minutes and resumes on the next
+query in well under a second, so in practice the Render cold start dominates.
