@@ -40,6 +40,12 @@ describe("POST /tickets", () => {
     await expect(container.database.client.ticket.count()).resolves.toBe(1);
   });
 
+  it("returns exactly the fields in the contract", async () => {
+    const response = await post({ title: "Printer jammed" });
+
+    expect(Object.keys(response.body).sort()).toEqual(Object.keys(ticketSchema.shape).sort());
+  });
+
   it("trims the title and drops a blank description", async () => {
     const response = await post({ title: "  VPN drops  ", description: "   ", priority: "high" });
 

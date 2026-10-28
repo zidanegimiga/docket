@@ -5,6 +5,16 @@ import type { StatusCounts, TicketEntity, TicketPage, TicketRepository } from ".
 
 const RECORD_NOT_FOUND = "P2025";
 
+const ticketColumns = {
+  id: true,
+  title: true,
+  description: true,
+  status: true,
+  priority: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.TicketSelect;
+
 export class PrismaTicketRepository implements TicketRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -15,6 +25,7 @@ export class PrismaTicketRepository implements TicketRepository {
         description: data.description ?? null,
         priority: data.priority,
       },
+      select: ticketColumns,
     });
   }
 
@@ -25,6 +36,7 @@ export class PrismaTicketRepository implements TicketRepository {
       [
         this.db.ticket.findMany({
           where,
+          select: ticketColumns,
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * limit,
           take: limit,
@@ -41,6 +53,7 @@ export class PrismaTicketRepository implements TicketRepository {
     try {
       return await this.db.ticket.update({
         where: { id },
+        select: ticketColumns,
         data: {
           ...(data.status && { status: data.status }),
           ...(data.priority && { priority: data.priority }),
