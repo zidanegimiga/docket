@@ -4,12 +4,13 @@ import type { Request, RequestHandler, Response } from "express";
 import type { OAuthProviderRegistry } from "../../core/identity/oauth/oauth-provider.registry.js";
 import { principalOf } from "../../shared/middleware/authenticate.middleware.js";
 
-import type { AuthService, ClientContext } from "./auth.service.js";
+import type { AuthService } from "./auth.service.js";
+import { clientContext } from "./client-context.js";
 import {
+  clearSessionCookies,
   sessionCookieNames,
-  sessionCookies,
   type SessionCookieSettings,
-  type SessionTokens,
+  writeSessionCookies,
 } from "./session-cookies.js";
 
 type Params = Record<string, string>;
@@ -31,7 +32,7 @@ export class AuthController {
 
   logIn: RequestHandler<Params, unknown, LogInBody> = async (req, res) => {
     const { user, tokens } = await this.service.logIn(req.body, clientContext(req));
-    this.setSessionCookies(res, tokens);
+    writeSessionCookies(res, tokens, this.cookies);
     res.json({ user });
   };
 
@@ -41,17 +42,17 @@ export class AuthController {
         this.refreshCookie(req),
         clientContext(req),
       );
-      this.setSessionCookies(res, tokens);
+      writeSessionCookies(res, tokens, this.cookies);
       res.json({ user });
     } catch (error) {
-      if (!isRotationRace(error)) this.clearSessionCookies(res);
+      if (!isRotationRace(error)) clearSessionCookies(res, this.cookies);
       throw error;
     }
   };
 
   logOut: RequestHandler = async (req, res) => {
     await this.service.logOut(this.refreshCookie(req));
-    this.clearSessionCookies(res);
+    clearSessionCookies(res, this.cookies);
     res.status(204).end();
   };
 
@@ -69,31 +70,6 @@ export class AuthController {
     const value: unknown = req.cookies?.[sessionCookieNames(this.cookies.secure).refresh];
     return typeof value === "string" && value.length > 0 ? value : undefined;
   }
-
-  private setSessionCookies(res: Response, tokens: SessionTokens): void {
-    res.set("Cache-Control", "no-store");
-    for (const { name, value, options } of sessionCookies(tokens, this.cookies)) {
-      res.cookie(name, value, options);
-    }
-  }
-
-  private clearSessionCookies(res: Response): void {
-    res.set("Cache-Control", "no-store");
-    const expired = {
-      accessToken: "",
-      refreshToken: "",
-      accessTokenExpiresAt: new Date(0),
-      refreshTokenExpiresAt: new Date(0),
-    };
-    for (const { name, options } of sessionCookies(expired, this.cookies)) {
-      const { expires: _expires, ...rest } = options;
-      res.clearCookie(name, rest);
-    }
-  }
-}
-
-function clientContext(req: Request): ClientContext {
-  return { ip: req.ip ?? null, userAgent: req.get("user-agent") ?? null };
 }
 
 function isRotationRace(error: unknown): boolean {

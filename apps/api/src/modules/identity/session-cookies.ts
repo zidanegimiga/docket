@@ -1,4 +1,4 @@
-import type { CookieOptions } from "express";
+import type { CookieOptions, Response } from "express";
 
 export interface SessionCookieSettings {
   secure: boolean;
@@ -45,4 +45,29 @@ export function sessionCookies(
       options: { ...base, path: `${apiPrefix}/auth`, expires: tokens.refreshTokenExpiresAt },
     },
   ];
+}
+
+export function writeSessionCookies(
+  res: Response,
+  tokens: SessionTokens,
+  settings: SessionCookieSettings,
+): void {
+  res.set("Cache-Control", "no-store");
+  for (const { name, value, options } of sessionCookies(tokens, settings)) {
+    res.cookie(name, value, options);
+  }
+}
+
+export function clearSessionCookies(res: Response, settings: SessionCookieSettings): void {
+  res.set("Cache-Control", "no-store");
+  const expired = {
+    accessToken: "",
+    refreshToken: "",
+    accessTokenExpiresAt: new Date(0),
+    refreshTokenExpiresAt: new Date(0),
+  };
+  for (const { name, options } of sessionCookies(expired, settings)) {
+    const { expires: _expires, ...rest } = options;
+    res.clearCookie(name, rest);
+  }
 }

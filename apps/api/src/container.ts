@@ -45,6 +45,7 @@ export async function createContainer(
         secure: new URL(env.WEB_ORIGIN).protocol === "https:",
         apiPrefix: env.PUBLIC_API_PREFIX,
       },
+      webOrigin: env.WEB_ORIGIN,
       refreshTokenTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
       refreshReuseGraceSeconds: env.REFRESH_REUSE_GRACE_SECONDS,
     }),

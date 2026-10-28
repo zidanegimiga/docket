@@ -20,6 +20,7 @@ export interface RouterDeps {
   identity: Identity;
   logger: Logger;
   cookies: SessionCookieSettings;
+  webOrigin: string;
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
 }
