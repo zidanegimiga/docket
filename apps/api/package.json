@@ -15,7 +15,8 @@
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
     "test:integration": "vitest run --project integration",
-    "auth:keys": "tsx scripts/generate-auth-key.ts"
+    "auth:keys": "tsx scripts/generate-auth-key.ts",
+    "admin:promote": "tsx --env-file-if-exists=.env scripts/promote-admin.ts"
   },
   "devDependencies": {
     "@docket/tsconfig": "*",

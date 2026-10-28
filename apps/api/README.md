@@ -33,6 +33,20 @@ npm run dev -w @docket/api
 The API listens on <http://localhost:4000>. Use `npm run db:migrate -w @docket/api` to create a
 new migration after changing `prisma/schema.prisma`.
 
+### The first administrator
+
+New accounts wait for an administrator's approval, so the first administrator is made from the
+command line. Sign up in the app (with a password or Google), then promote that account:
+
+```bash
+npm run admin:promote -w @docket/api -- --email you@example.com
+```
+
+It activates the account and adds the `admin` role, and is safe to run again. It reads
+`DATABASE_URL` from `apps/api/.env`; to promote someone in a deployed database, set
+`DATABASE_URL` for that one command instead. The script never takes a password, and the API has
+no way to become an administrator without an existing one.
+
 ## Layout
 
 ```
