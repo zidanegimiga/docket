@@ -1,8 +1,14 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
-import type { CurrentUser, LogInBody, SignUpBody } from "@docket/contracts";
+import {
+  type CurrentUser,
+  type LogInBody,
+  NAME_MAX_LENGTH,
+  type SignUpBody,
+} from "@docket/contracts";
 
 import type { EmailMessage, EmailSender } from "../../core/email/email-sender.interface.js";
+import type { ExternalIdentity } from "../../core/identity/oauth/oauth-provider.interface.js";
 import type { PasswordHasher } from "../../core/identity/password-hasher.interface.js";
 import type { Principal } from "../../core/identity/principal.js";
 import type { TokenIssuer } from "../../core/identity/token.interface.js";
@@ -48,6 +54,12 @@ const invalidCredentials = () =>
 const sessionExpired = () =>
   new UnauthorizedError("SESSION_EXPIRED", "Your session has ended. Sign in again.");
 
+const accountExists = () =>
+  new ForbiddenError(
+    "OAUTH_ACCOUNT_EXISTS",
+    "An account with this email already exists. Sign in with your password.",
+  );
+
 // Another request rotated this token moments ago, usually a second tab; the client should retry.
 const sessionRotated = () =>
   new UnauthorizedError("SESSION_ROTATED", "Your session was just refreshed. Retry the request.");
@@ -63,12 +75,7 @@ export class AuthService {
     const user = await this.deps.users.createWithPassword({ email, name, passwordHash });
 
     if (user) {
-      this.deps.monitor.recordMetric("auth.signups", 1);
-      await this.sendQuietly({
-        to: email,
-        subject: "Your Docket account is waiting for approval",
-        text: `Hi ${name},\n\nThanks for signing up. An administrator needs to approve your account before you can use Docket. You will be able to sign in once that happens.`,
-      });
+      await this.welcome(user);
     } else {
       await this.sendQuietly({
         to: email,
@@ -105,13 +112,30 @@ export class AuthService {
       );
     }
 
-    const now = this.now();
-    await this.deps.users.recordLogin(user.id, now);
     this.deps.monitor.recordMetric("auth.logins", 1, { outcome: "success" });
+    return this.startSession(user, client);
+  }
 
-    const refreshToken = this.newRefreshToken(user.id, randomUUID(), client, now);
-    await this.deps.refreshTokens.create(refreshToken.record);
-    return this.sessionFor(user, refreshToken);
+  /**
+   * Signs in with an identity a provider has vouched for, registering or linking the account on
+   * first use. Like password sign-ups, new accounts start pending.
+   */
+  async signInWithIdentity(
+    identity: ExternalIdentity,
+    client: ClientContext,
+  ): Promise<LoginResult> {
+    const user =
+      (await this.deps.users.findByIdentity(identity.provider, identity.subject)) ??
+      (await this.registerIdentity(identity));
+
+    const tags = { provider: identity.provider };
+    if (user.status === "disabled") {
+      this.deps.monitor.recordMetric("auth.oauth_logins", 1, { ...tags, outcome: "disabled" });
+      throw new ForbiddenError("ACCOUNT_DISABLED", "This account has been disabled");
+    }
+
+    this.deps.monitor.recordMetric("auth.oauth_logins", 1, { ...tags, outcome: "success" });
+    return this.startSession(user, client);
   }
 
   async refresh(presentedToken: string | undefined, client: ClientContext): Promise<LoginResult> {
@@ -167,6 +191,65 @@ export class AuthService {
     if (!presentedToken) return;
     const current = await this.deps.refreshTokens.findByHash(hashRefreshToken(presentedToken));
     if (current) await this.deps.refreshTokens.revokeFamily(current.familyId, this.now());
+  }
+
+  private async registerIdentity({
+    provider,
+    subject,
+    email,
+    emailVerified,
+    name,
+  }: ExternalIdentity): Promise<UserRecord> {
+    // An unverified address could claim someone else's account, or squat on their email.
+    if (!email || !emailVerified) {
+      throw new ForbiddenError(
+        "OAUTH_EMAIL_UNVERIFIED",
+        "Your provider did not confirm your email address",
+      );
+    }
+
+    const identity = { provider, subject, email };
+    const existing = await this.deps.users.findByEmail(email);
+    if (existing) {
+      // Linking needs our side verified too, or whoever registered the address first would gain access.
+      if (!existing.emailVerifiedAt) throw accountExists();
+      await this.deps.users.linkIdentity(existing.id, identity);
+      return existing;
+    }
+
+    const created = await this.deps.users.createWithIdentity({
+      email,
+      name: name?.trim().slice(0, NAME_MAX_LENGTH) || email.split("@")[0]!,
+      emailVerified: true,
+      identity,
+    });
+    if (!created) {
+      // A concurrent sign-in registered the same identity or email first.
+      const winner = await this.deps.users.findByIdentity(provider, subject);
+      if (winner) return winner;
+      throw accountExists();
+    }
+
+    await this.welcome(created);
+    return created;
+  }
+
+  private async welcome(user: UserRecord): Promise<void> {
+    this.deps.monitor.recordMetric("auth.signups", 1);
+    await this.sendQuietly({
+      to: user.email,
+      subject: "Your Docket account is waiting for approval",
+      text: `Hi ${user.name},\n\nThanks for signing up. An administrator needs to approve your account before you can use Docket. You will be able to sign in once that happens.`,
+    });
+  }
+
+  private async startSession(user: UserRecord, client: ClientContext): Promise<LoginResult> {
+    const now = this.now();
+    await this.deps.users.recordLogin(user.id, now);
+
+    const refreshToken = this.newRefreshToken(user.id, randomUUID(), client, now);
+    await this.deps.refreshTokens.create(refreshToken.record);
+    return this.sessionFor(user, refreshToken);
   }
 
   private newRefreshToken(userId: string, familyId: string, client: ClientContext, now: Date) {
