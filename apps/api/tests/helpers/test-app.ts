@@ -16,6 +16,7 @@ export function createTestContainer(overrides: IdentityOverrides = {}): Promise<
       DATABASE_URL: TEST_DATABASE_URL,
       AUTH_PRIVATE_KEY: testSigningKey,
       PUBLIC_API_PREFIX: "",
+      REFRESH_REUSE_GRACE_SECONDS: "0",
     }),
     overrides,
   );

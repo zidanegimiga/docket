@@ -20,6 +20,7 @@ export interface IdentityModuleDeps {
   logger: Logger;
   cookies: SessionCookieSettings;
   refreshTokenTtlDays: number;
+  refreshReuseGraceSeconds: number;
 }
 
 export function createIdentityModule({
@@ -29,6 +30,7 @@ export function createIdentityModule({
   logger,
   cookies,
   refreshTokenTtlDays,
+  refreshReuseGraceSeconds,
 }: IdentityModuleDeps): Router {
   const users = new PrismaUserRepository(database.client);
   const authService = new AuthService({
@@ -40,6 +42,7 @@ export function createIdentityModule({
     emailSender: identity.emailSender,
     monitor,
     refreshTokenTtlDays,
+    refreshReuseGraceSeconds,
   });
 
   return authRoutes(new AuthController(authService, cookies));

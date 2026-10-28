@@ -9,6 +9,8 @@ export function authRoutes(controller: AuthController): Router {
 
   router.post("/signup", validate({ body: signUpSchema }), controller.signUp);
   router.post("/login", validate({ body: logInSchema }), controller.logIn);
+  router.post("/refresh", controller.refresh);
+  router.post("/logout", controller.logOut);
 
   return router;
 }

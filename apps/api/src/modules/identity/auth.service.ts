@@ -22,6 +22,8 @@ export interface AuthServiceDeps {
   emailSender: EmailSender;
   monitor: Monitor;
   refreshTokenTtlDays: number;
+  refreshReuseGraceSeconds: number;
+  now?: () => Date;
 }
 
 export interface ClientContext {
@@ -41,6 +43,13 @@ export const hashRefreshToken = (token: string) => createHash("sha256").update(t
 
 const invalidCredentials = () =>
   new UnauthorizedError("INVALID_CREDENTIALS", "Email or password is incorrect");
+
+const sessionExpired = () =>
+  new UnauthorizedError("SESSION_EXPIRED", "Your session has ended. Sign in again.");
+
+// Another request rotated this token moments ago, usually a second tab; the client should retry.
+const sessionRotated = () =>
+  new UnauthorizedError("SESSION_ROTATED", "Your session was just refreshed. Retry the request.");
 
 export class AuthService {
   private dummyHash: Promise<string> | undefined;
@@ -95,34 +104,85 @@ export class AuthService {
       );
     }
 
-    const now = new Date();
+    const now = this.now();
     await this.deps.users.recordLogin(user.id, now);
     this.deps.monitor.recordMetric("auth.logins", 1, { outcome: "success" });
 
-    return this.startSession(user, client, now);
+    const refreshToken = this.newRefreshToken(user.id, randomUUID(), client, now);
+    await this.deps.refreshTokens.create(refreshToken.record);
+    return this.sessionFor(user, refreshToken);
   }
 
-  private async startSession(
+  async refresh(presentedToken: string | undefined, client: ClientContext): Promise<LoginResult> {
+    if (!presentedToken) throw sessionExpired();
+
+    const now = this.now();
+    const current = await this.deps.refreshTokens.findByHash(hashRefreshToken(presentedToken));
+    if (!current) throw sessionExpired();
+
+    if (current.revokedAt) {
+      // Revoked without a replacement means logout or a family revocation: the session simply ended.
+      if (!current.replacedById) throw sessionExpired();
+
+      const secondsSinceRotation = (now.getTime() - current.revokedAt.getTime()) / 1000;
+      if (secondsSinceRotation <= this.deps.refreshReuseGraceSeconds) throw sessionRotated();
+
+      await this.deps.refreshTokens.revokeFamily(current.familyId, now);
+      this.deps.monitor.recordMetric("auth.refresh_token_reuse", 1);
+      this.deps.monitor.captureException(new Error("Refresh token reuse detected"), {
+        userId: current.userId,
+        familyId: current.familyId,
+      });
+      throw sessionExpired();
+    }
+
+    if (current.expiresAt <= now) throw sessionExpired();
+
+    const user = await this.deps.users.findById(current.userId);
+    if (!user || user.status === "disabled") {
+      await this.deps.refreshTokens.revokeFamily(current.familyId, now);
+      throw sessionExpired();
+    }
+
+    const next = this.newRefreshToken(user.id, current.familyId, client, now);
+    const rotated = await this.deps.refreshTokens.rotate(current.id, next.record, now);
+    if (!rotated) throw sessionRotated();
+
+    return this.sessionFor(user, next);
+  }
+
+  async logOut(presentedToken: string | undefined): Promise<void> {
+    if (!presentedToken) return;
+    const current = await this.deps.refreshTokens.findByHash(hashRefreshToken(presentedToken));
+    if (current) await this.deps.refreshTokens.revokeFamily(current.familyId, this.now());
+  }
+
+  private newRefreshToken(userId: string, familyId: string, client: ClientContext, now: Date) {
+    const value = randomBytes(32).toString("base64url");
+    const expiresAt = new Date(now.getTime() + this.deps.refreshTokenTtlDays * DAY_MS);
+    return {
+      value,
+      expiresAt,
+      record: {
+        userId,
+        familyId,
+        tokenHash: hashRefreshToken(value),
+        expiresAt,
+        createdIp: client.ip,
+        userAgent: client.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
+      },
+    };
+  }
+
+  private async sessionFor(
     user: UserRecord,
-    client: ClientContext,
-    now: Date,
+    refreshToken: { value: string; expiresAt: Date },
   ): Promise<LoginResult> {
     const access = await this.deps.access.resolve(user.id);
-    if (!access) throw invalidCredentials();
+    if (!access) throw sessionExpired();
 
     const { token: accessToken, expiresAt: accessTokenExpiresAt } =
       await this.deps.tokenIssuer.issueAccessToken(access);
-
-    const refreshToken = randomBytes(32).toString("base64url");
-    const refreshTokenExpiresAt = new Date(now.getTime() + this.deps.refreshTokenTtlDays * DAY_MS);
-    await this.deps.refreshTokens.create({
-      userId: user.id,
-      familyId: randomUUID(),
-      tokenHash: hashRefreshToken(refreshToken),
-      expiresAt: refreshTokenExpiresAt,
-      createdIp: client.ip,
-      userAgent: client.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
-    });
 
     return {
       user: {
@@ -134,8 +194,17 @@ export class AuthService {
         providers: await this.deps.users.listProviders(user.id),
         hasPassword: user.passwordHash !== null,
       },
-      tokens: { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt },
+      tokens: {
+        accessToken,
+        accessTokenExpiresAt,
+        refreshToken: refreshToken.value,
+        refreshTokenExpiresAt: refreshToken.expiresAt,
+      },
     };
+  }
+
+  private now(): Date {
+    return this.deps.now?.() ?? new Date();
   }
 
   private getDummyHash(): Promise<string> {

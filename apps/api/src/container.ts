@@ -46,6 +46,7 @@ export async function createContainer(
         apiPrefix: env.PUBLIC_API_PREFIX,
       },
       refreshTokenTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
+      refreshReuseGraceSeconds: env.REFRESH_REUSE_GRACE_SECONDS,
     }),
     trustProxyHops: env.TRUST_PROXY_HOPS,
   });

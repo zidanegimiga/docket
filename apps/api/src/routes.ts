@@ -17,6 +17,7 @@ export interface RouterDeps {
   logger: Logger;
   cookies: SessionCookieSettings;
   refreshTokenTtlDays: number;
+  refreshReuseGraceSeconds: number;
 }
 
 export function createRouter(deps: RouterDeps): Router {

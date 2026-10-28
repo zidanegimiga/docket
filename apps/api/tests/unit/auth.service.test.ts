@@ -58,8 +58,10 @@ describe("AuthService", () => {
   let email: RecordingEmailSender;
   let monitor: RecordingMonitor;
   let service: AuthService;
+  let clock: Date;
 
   beforeEach(() => {
+    clock = new Date();
     users = new InMemoryUserRepository();
     refreshTokens = new InMemoryRefreshTokenRepository();
     hasher = new CountingHasher();
@@ -75,6 +77,8 @@ describe("AuthService", () => {
       emailSender: email,
       monitor,
       refreshTokenTtlDays: 30,
+      refreshReuseGraceSeconds: 30,
+      now: () => clock,
     });
   });
 
@@ -253,6 +257,118 @@ describe("AuthService", () => {
       const error = await service.logIn({ ...jane, password: "nope" }, client).catch((e) => e);
 
       expect(error).not.toBeInstanceOf(ForbiddenError);
+    });
+  });
+
+  describe("refresh", () => {
+    const signedIn = async () => {
+      await service.signUp(jane);
+      const user = users.users[0]!;
+      user.status = "active";
+      users.grant(user.id, { rolePermissions: ["tickets:read"] });
+      const { tokens } = await service.logIn(jane, client);
+      return { user, refreshToken: tokens.refreshToken };
+    };
+    const advance = (seconds: number) => {
+      clock = new Date(clock.getTime() + seconds * 1000);
+    };
+
+    it("rotates the refresh token within the same family and re-reads permissions", async () => {
+      const { user, refreshToken } = await signedIn();
+      users.grant(user.id, { rolePermissions: ["tickets:read", "tickets:update:any"] });
+
+      const result = await service.refresh(refreshToken, client);
+
+      expect(result.tokens.refreshToken).not.toBe(refreshToken);
+      expect(result.user.permissions).toEqual(["tickets:read", "tickets:update:any"]);
+      const [original, replacement] = refreshTokens.tokens;
+      expect(original).toMatchObject({ revokedAt: clock, replacedById: replacement!.id });
+      expect(replacement).toMatchObject({ familyId: original!.familyId, revokedAt: null });
+    });
+
+    it("asks a second tab to retry when the token was rotated moments ago", async () => {
+      const { refreshToken } = await signedIn();
+      await service.refresh(refreshToken, client);
+      advance(29);
+
+      await expect(service.refresh(refreshToken, client)).rejects.toMatchObject({
+        code: "SESSION_ROTATED",
+      });
+      expect(refreshTokens.tokens.filter((token) => !token.revokedAt)).toHaveLength(1);
+      expect(monitor.exceptions).toEqual([]);
+    });
+
+    it("treats a rotated token presented after the grace period as theft and ends the family", async () => {
+      const { refreshToken } = await signedIn();
+      const { tokens: current } = await service.refresh(refreshToken, client);
+      advance(31);
+
+      await expect(service.refresh(refreshToken, client)).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+
+      expect(refreshTokens.tokens.every((token) => token.revokedAt)).toBe(true);
+      await expect(service.refresh(current.refreshToken, client)).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+      expect(monitor.exceptions).toEqual([new Error("Refresh token reuse detected")]);
+      expect(monitor.metrics).toContainEqual({
+        name: "auth.refresh_token_reuse",
+        value: 1,
+        tags: {},
+      });
+    });
+
+    it.each([
+      ["no token", undefined],
+      ["an unknown token", "not-a-real-token"],
+    ])("rejects %s as an ended session", async (_, token) => {
+      await expect(service.refresh(token, client)).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+    });
+
+    it("rejects an expired token", async () => {
+      const { refreshToken } = await signedIn();
+      advance(31 * 86_400);
+
+      await expect(service.refresh(refreshToken, client)).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+    });
+
+    it("ends the session of a user who was disabled since signing in", async () => {
+      const { user, refreshToken } = await signedIn();
+      user.status = "disabled";
+
+      await expect(service.refresh(refreshToken, client)).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+      expect(refreshTokens.tokens.every((token) => token.revokedAt)).toBe(true);
+    });
+
+    it("drops permissions for a user moved back to pending without ending the session", async () => {
+      const { user, refreshToken } = await signedIn();
+      user.status = "pending";
+
+      const result = await service.refresh(refreshToken, client);
+
+      expect(result.user).toMatchObject({ status: "pending", permissions: [] });
+    });
+  });
+
+  describe("logOut", () => {
+    it("revokes the whole session family and ignores missing or unknown tokens", async () => {
+      await service.signUp(jane);
+      users.users[0]!.status = "active";
+      const { tokens } = await service.logIn(jane, client);
+      await service.logIn(jane, client);
+
+      await service.logOut(tokens.refreshToken);
+      await service.logOut(undefined);
+      await service.logOut("unknown");
+
+      expect(refreshTokens.tokens.map((token) => Boolean(token.revokedAt))).toEqual([true, false]);
     });
   });
 });

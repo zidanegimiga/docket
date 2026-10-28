@@ -1,8 +1,9 @@
 import type { LogInBody, SignUpBody } from "@docket/contracts";
-import type { RequestHandler, Response } from "express";
+import type { Request, RequestHandler, Response } from "express";
 
-import type { AuthService } from "./auth.service.js";
+import type { AuthService, ClientContext } from "./auth.service.js";
 import {
+  sessionCookieNames,
   sessionCookies,
   type SessionCookieSettings,
   type SessionTokens,
@@ -25,14 +26,35 @@ export class AuthController {
   };
 
   logIn: RequestHandler<Params, unknown, LogInBody> = async (req, res) => {
-    const { user, tokens } = await this.service.logIn(req.body, {
-      ip: req.ip ?? null,
-      userAgent: req.get("user-agent") ?? null,
-    });
-
+    const { user, tokens } = await this.service.logIn(req.body, clientContext(req));
     this.setSessionCookies(res, tokens);
     res.json({ user });
   };
+
+  refresh: RequestHandler = async (req, res) => {
+    try {
+      const { user, tokens } = await this.service.refresh(
+        this.refreshCookie(req),
+        clientContext(req),
+      );
+      this.setSessionCookies(res, tokens);
+      res.json({ user });
+    } catch (error) {
+      if (!isRotationRace(error)) this.clearSessionCookies(res);
+      throw error;
+    }
+  };
+
+  logOut: RequestHandler = async (req, res) => {
+    await this.service.logOut(this.refreshCookie(req));
+    this.clearSessionCookies(res);
+    res.status(204).end();
+  };
+
+  private refreshCookie(req: Request): string | undefined {
+    const value: unknown = req.cookies?.[sessionCookieNames(this.cookies.secure).refresh];
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  }
 
   private setSessionCookies(res: Response, tokens: SessionTokens): void {
     res.set("Cache-Control", "no-store");
@@ -40,4 +62,26 @@ export class AuthController {
       res.cookie(name, value, options);
     }
   }
+
+  private clearSessionCookies(res: Response): void {
+    res.set("Cache-Control", "no-store");
+    const expired = {
+      accessToken: "",
+      refreshToken: "",
+      accessTokenExpiresAt: new Date(0),
+      refreshTokenExpiresAt: new Date(0),
+    };
+    for (const { name, options } of sessionCookies(expired, this.cookies)) {
+      const { expires: _expires, ...rest } = options;
+      res.clearCookie(name, rest);
+    }
+  }
+}
+
+function clientContext(req: Request): ClientContext {
+  return { ip: req.ip ?? null, userAgent: req.get("user-agent") ?? null };
+}
+
+function isRotationRace(error: unknown): boolean {
+  return (error as { code?: unknown } | null)?.code === "SESSION_ROTATED";
 }

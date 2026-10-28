@@ -303,6 +303,7 @@ Set `TEST_DATABASE_URL` to use a different database.
 | `AUTH_AUDIENCE`                            | `docket-api`            | Audience claim in access tokens                                                            |
 | `ACCESS_TOKEN_TTL_SECONDS`                 | `600`                   | Access token lifetime, 60 to 3600                                                          |
 | `REFRESH_TOKEN_TTL_DAYS`                   | `30`                    | Refresh token lifetime, 1 to 90                                                            |
+| `REFRESH_REUSE_GRACE_SECONDS`              | `30`                    | How long a just-rotated refresh token is treated as a tab race rather than theft, 0 to 120 |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | none                    | Enable Google sign-in when both are set                                                    |
 
 The environment is validated at startup and every invalid variable is reported at once.

@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express, { type Express, type Router } from "express";
 
 import type { Logger } from "./core/logger/logger.interface.js";
@@ -25,6 +26,7 @@ export function createApp({ logger, monitor, router, trustProxyHops }: AppDeps):
   app.use(requestContext(logger));
   app.use(requestLogger(monitor));
   app.use(express.json({ limit: "64kb" }));
+  app.use(cookieParser());
 
   app.use(router);
 
