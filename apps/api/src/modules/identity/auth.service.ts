@@ -4,6 +4,7 @@ import type { CurrentUser, LogInBody, SignUpBody } from "@docket/contracts";
 
 import type { EmailMessage, EmailSender } from "../../core/email/email-sender.interface.js";
 import type { PasswordHasher } from "../../core/identity/password-hasher.interface.js";
+import type { Principal } from "../../core/identity/principal.js";
 import type { TokenIssuer } from "../../core/identity/token.interface.js";
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import { ForbiddenError } from "../../shared/errors/forbidden.error.js";
@@ -151,6 +152,17 @@ export class AuthService {
     return this.sessionFor(user, next);
   }
 
+  /**
+   * The caller's profile with the status and permissions their access token grants. Changes made
+   * since the token was issued apply at the next refresh, the same moment the API enforces them.
+   */
+  async currentUser({ userId, status, permissions }: Principal): Promise<CurrentUser> {
+    const user = await this.deps.users.findById(userId);
+    if (!user || user.status === "disabled") throw sessionExpired();
+
+    return this.toCurrentUser(user, { status, permissions });
+  }
+
   async logOut(presentedToken: string | undefined): Promise<void> {
     if (!presentedToken) return;
     const current = await this.deps.refreshTokens.findByHash(hashRefreshToken(presentedToken));
@@ -185,21 +197,28 @@ export class AuthService {
       await this.deps.tokenIssuer.issueAccessToken(access);
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        status: access.status,
-        permissions: access.permissions,
-        providers: await this.deps.users.listProviders(user.id),
-        hasPassword: user.passwordHash !== null,
-      },
+      user: await this.toCurrentUser(user, access),
       tokens: {
         accessToken,
         accessTokenExpiresAt,
         refreshToken: refreshToken.value,
         refreshTokenExpiresAt: refreshToken.expiresAt,
       },
+    };
+  }
+
+  private async toCurrentUser(
+    user: UserRecord,
+    { status, permissions }: Pick<Principal, "status" | "permissions">,
+  ): Promise<CurrentUser> {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      status,
+      permissions,
+      providers: await this.deps.users.listProviders(user.id),
+      hasPassword: user.passwordHash !== null,
     };
   }
 

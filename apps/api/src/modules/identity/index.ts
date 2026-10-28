@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { RequestHandler, Router } from "express";
 
 import type { DatabaseProvider } from "../../core/database/database.interface.js";
 import type { Identity } from "../../core/identity/identity.js";
@@ -12,6 +12,8 @@ import { AuthService } from "./auth.service.js";
 import type { SessionCookieSettings } from "./session-cookies.js";
 import { PrismaRefreshTokenRepository } from "./session.repository.js";
 import { PrismaUserRepository } from "./user.repository.js";
+import { WellKnownController } from "./well-known.controller.js";
+import { wellKnownRoutes } from "./well-known.routes.js";
 
 export interface IdentityModuleDeps {
   database: DatabaseProvider<PrismaClient>;
@@ -21,6 +23,14 @@ export interface IdentityModuleDeps {
   cookies: SessionCookieSettings;
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
+  authenticate: RequestHandler;
+}
+
+export interface IdentityModule {
+  /** Mounted at /auth. */
+  auth: Router;
+  /** Mounted at /.well-known, for services that verify our tokens. */
+  wellKnown: Router;
 }
 
 export function createIdentityModule({
@@ -31,7 +41,8 @@ export function createIdentityModule({
   cookies,
   refreshTokenTtlDays,
   refreshReuseGraceSeconds,
-}: IdentityModuleDeps): Router {
+  authenticate,
+}: IdentityModuleDeps): IdentityModule {
   const users = new PrismaUserRepository(database.client);
   const authService = new AuthService({
     users,
@@ -45,5 +56,11 @@ export function createIdentityModule({
     refreshReuseGraceSeconds,
   });
 
-  return authRoutes(new AuthController(authService, cookies));
+  return {
+    auth: authRoutes(
+      new AuthController(authService, cookies, identity.oauthProviders),
+      authenticate,
+    ),
+    wellKnown: wellKnownRoutes(new WellKnownController(identity.tokenIssuer)),
+  };
 }

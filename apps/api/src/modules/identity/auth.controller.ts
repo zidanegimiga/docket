@@ -1,6 +1,9 @@
 import type { LogInBody, SignUpBody } from "@docket/contracts";
 import type { Request, RequestHandler, Response } from "express";
 
+import type { OAuthProviderRegistry } from "../../core/identity/oauth/oauth-provider.registry.js";
+import { principalOf } from "../../shared/middleware/authenticate.middleware.js";
+
 import type { AuthService, ClientContext } from "./auth.service.js";
 import {
   sessionCookieNames,
@@ -18,6 +21,7 @@ export class AuthController {
   constructor(
     private readonly service: AuthService,
     private readonly cookies: SessionCookieSettings,
+    private readonly oauthProviders: OAuthProviderRegistry,
   ) {}
 
   signUp: RequestHandler<Params, unknown, SignUpBody> = async (req, res) => {
@@ -49,6 +53,16 @@ export class AuthController {
     await this.service.logOut(this.refreshCookie(req));
     this.clearSessionCookies(res);
     res.status(204).end();
+  };
+
+  me: RequestHandler = async (req, res) => {
+    const user = await this.service.currentUser(principalOf(req));
+    res.set("Cache-Control", "no-store");
+    res.json({ user });
+  };
+
+  providers: RequestHandler = (_req, res) => {
+    res.json({ providers: this.oauthProviders.list() });
   };
 
   private refreshCookie(req: Request): string | undefined {
