@@ -357,6 +357,47 @@ describe("AuthService", () => {
     });
   });
 
+  describe("currentUser", () => {
+    it("reports what the access token grants, not what changed since it was issued", async () => {
+      await service.signUp(jane);
+      const user = users.users[0]!;
+      user.status = "active";
+
+      const result = await service.currentUser({
+        userId: user.id,
+        status: "pending",
+        permissions: [],
+      });
+
+      expect(result).toEqual({
+        id: user.id,
+        email: jane.email,
+        name: jane.name,
+        status: "pending",
+        permissions: [],
+        providers: [],
+        hasPassword: true,
+      });
+    });
+
+    it.each([
+      { label: "has since been disabled", status: "disabled" as UserStatus, exists: true },
+      { label: "no longer exists", status: "active" as UserStatus, exists: false },
+    ])("ends the session of a user who $label", async ({ status, exists }) => {
+      await service.signUp(jane);
+      const user = users.users[0]!;
+      user.status = status;
+
+      await expect(
+        service.currentUser({
+          userId: exists ? user.id : "0199c3a2-0000-7000-8000-000000000000",
+          status: "active",
+          permissions: ["tickets:read"],
+        }),
+      ).rejects.toMatchObject({ statusCode: 401, code: "SESSION_EXPIRED" });
+    });
+  });
+
   describe("logOut", () => {
     it("revokes the whole session family and ignores missing or unknown tokens", async () => {
       await service.signUp(jane);
