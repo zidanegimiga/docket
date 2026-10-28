@@ -7,6 +7,7 @@ import { serverRequestContext } from "@/features/auth/server-session";
 import { getQueryClient } from "@/shared/query/query-client";
 
 import styles from "../layout.module.css";
+import { MainNav } from "./_components/MainNav";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,7 +21,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <SessionGate mainClassName={styles.main}>{children}</SessionGate>
+      <SessionGate nav={<MainNav />} mainClassName={styles.main}>
+        {children}
+      </SessionGate>
     </HydrationBoundary>
   );
 }

@@ -1,0 +1,8 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.denied {
+  color: var(--color-text-muted);
+}

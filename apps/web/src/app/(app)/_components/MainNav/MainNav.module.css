@@ -1,0 +1,22 @@
+.nav {
+  display: flex;
+  gap: var(--space-4);
+  margin-left: var(--space-4);
+}
+
+.link {
+  padding: var(--space-1) 0;
+  border-bottom: 2px solid transparent;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--color-text);
+}
+
+.link[aria-current="page"] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text);
+}

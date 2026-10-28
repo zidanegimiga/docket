@@ -12,6 +12,8 @@ import styles from "./SessionGate.module.css";
 
 interface SessionGateProps {
   children: ReactNode;
+  /** Section links for the header, shown once the user is known and active. */
+  nav?: ReactNode;
   mainClassName?: string;
 }
 
@@ -19,12 +21,15 @@ interface SessionGateProps {
  * Renders the signed-in app once the current user is known. Pending users see the waiting
  * screen instead; an expired session has already been sent to the login page by the API client.
  */
-export function SessionGate({ children, mainClassName }: SessionGateProps) {
+export function SessionGate({ children, nav, mainClassName }: SessionGateProps) {
   const { data: user, isError, refetch } = useCurrentUser();
 
   return (
     <>
-      <AppHeader>{user && <UserMenu user={user} />}</AppHeader>
+      <AppHeader>
+        {user?.status === "active" && nav}
+        {user && <UserMenu user={user} />}
+      </AppHeader>
       <main className={mainClassName}>
         {user ? (
           user.status === "active" ? (
