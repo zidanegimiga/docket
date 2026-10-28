@@ -24,6 +24,14 @@ describe("PrismaUserRepository", () => {
 
   const google = { provider: "google", subject: "google-123", email: "jane@example.com" };
 
+  const roleNames = async (userId: string) =>
+    (
+      await container.database.client.userRole.findMany({
+        where: { userId },
+        select: { role: { select: { name: true } } },
+      })
+    ).map(({ role }) => role.name);
+
   it("creates a pending password user and finds it by email and id", async () => {
     const created = await users.createWithPassword({
       email: "jane@example.com",
@@ -35,6 +43,8 @@ describe("PrismaUserRepository", () => {
     expect(created?.id).toMatch(/^[0-9a-f-]{36}$/);
     await expect(users.findByEmail("jane@example.com")).resolves.toEqual(created);
     await expect(users.findById(created!.id)).resolves.toEqual(created);
+    // Pending withholds the member role's permissions until an administrator approves.
+    await expect(roleNames(created!.id)).resolves.toEqual(["member"]);
   });
 
   it("returns null instead of throwing when the email is already registered", async () => {
@@ -65,6 +75,7 @@ describe("PrismaUserRepository", () => {
     await expect(users.findByIdentity("google", "google-123")).resolves.toEqual(created);
     await expect(users.findByIdentity("google", "someone-else")).resolves.toBeNull();
     await expect(users.listProviders(created!.id)).resolves.toEqual(["google"]);
+    await expect(roleNames(created!.id)).resolves.toEqual(["member"]);
   });
 
   it("links another identity to an existing user", async () => {
@@ -86,12 +97,6 @@ describe("PrismaUserRepository", () => {
       email: "jane@example.com",
       name: "Jane",
       passwordHash: "h",
-    });
-    const member = await container.database.client.role.findUniqueOrThrow({
-      where: { name: "member" },
-    });
-    await container.database.client.userRole.create({
-      data: { userId: user!.id, roleId: member.id },
     });
     await container.database.client.userPermission.create({
       data: { userId: user!.id, permission: "audit:read" },

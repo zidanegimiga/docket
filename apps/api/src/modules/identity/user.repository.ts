@@ -10,6 +10,13 @@ import type {
 
 const UNIQUE_VIOLATION = "P2002";
 
+/**
+ * Every new account starts with this role. Its status stays pending, which withholds all
+ * permissions, so approval is a single status change rather than a status and a role.
+ */
+export const DEFAULT_ROLE = "member";
+const defaultRole = { create: { role: { connect: { name: DEFAULT_ROLE } } } };
+
 const userColumns = {
   id: true,
   email: true,
@@ -51,7 +58,7 @@ export class PrismaUserRepository implements UserRepository {
   }: NewPasswordUser): Promise<UserRecord | null> {
     try {
       return await this.db.user.create({
-        data: { email, name, passwordHash },
+        data: { email, name, passwordHash, roles: defaultRole },
         select: userColumns,
       });
     } catch (error) {
@@ -73,6 +80,7 @@ export class PrismaUserRepository implements UserRepository {
           name,
           emailVerifiedAt: emailVerified ? new Date() : null,
           identities: { create: identity },
+          roles: defaultRole,
         },
         select: userColumns,
       });
