@@ -89,4 +89,18 @@ describe("session refresh in the API client", () => {
     expect(refreshes).toBe(0);
     expect(onExpired).not.toHaveBeenCalled();
   });
+
+  it("signs out a user whose account was disabled while their token was still valid", async () => {
+    server.use(
+      http.get("/api/auth/me", () => unauthorized("SESSION_EXPIRED")),
+      http.post("/api/auth/refresh", () => {
+        refreshes += 1;
+        return unauthorized("SESSION_EXPIRED");
+      }),
+    );
+
+    await expect(request("/auth/me")).rejects.toMatchObject({ code: "SESSION_EXPIRED" });
+    expect(refreshes).toBe(1);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+  });
 });

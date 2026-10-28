@@ -18,10 +18,13 @@ export interface RequestContext {
 }
 
 // 401 codes a refreshed session can fix. Others, such as wrong credentials, are final.
+// SESSION_EXPIRED here means the account was disabled or removed while the token was still
+// valid; the refresh then fails too, clears the cookies and sends the user to log in.
 const SESSION_ERRORS = new Set([
   "AUTHENTICATION_REQUIRED",
   "ACCESS_TOKEN_EXPIRED",
   "INVALID_ACCESS_TOKEN",
+  "SESSION_EXPIRED",
 ]);
 // Endpoints that manage the session themselves and must never trigger a refresh.
 const SESSION_ENDPOINTS = ["/auth/login", "/auth/signup", "/auth/refresh", "/auth/logout"];
