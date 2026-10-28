@@ -19,5 +19,6 @@ export function createTestContainer(): Promise<Container> {
 }
 
 export async function resetDatabase({ database }: Container): Promise<void> {
-  await database.client.$executeRaw`TRUNCATE TABLE "tickets" RESTART IDENTITY`;
+  await database.client.$executeRaw`TRUNCATE TABLE "tickets", "users" RESTART IDENTITY CASCADE`;
+  await database.client.role.deleteMany({ where: { isSystem: false } });
 }
