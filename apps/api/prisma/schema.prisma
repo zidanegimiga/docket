@@ -34,8 +34,11 @@ model Ticket {
   priority    TicketPriority @default(medium)
   createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?        @map("created_by_id") @db.Uuid
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
+  @@index([createdById])
   @@map("tickets")
 }
 
@@ -61,6 +64,7 @@ model User {
   roles           UserRole[]
   permissions     UserPermission[]
   refreshTokens   RefreshToken[]
+  tickets         Ticket[]
 
   @@index([status, createdAt])
   @@map("users")
