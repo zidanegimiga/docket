@@ -5,6 +5,8 @@ import type { Identity } from "../../core/identity/identity.js";
 import type { Logger } from "../../core/logger/logger.interface.js";
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
+import { AdminRoleController } from "./admin-roles.controller.js";
+import { PrismaAdminRoleRepository } from "./admin-roles.repository.js";
 import { AdminUserController } from "./admin-users.controller.js";
 import { PrismaAdminUserRepository } from "./admin-users.repository.js";
 import { AdminUserService } from "./admin-users.service.js";
@@ -103,7 +105,16 @@ export function createIdentityModule({
     auth,
     wellKnown: wellKnownRoutes(new WellKnownController(identity.tokenIssuer)),
     admin: adminRoutes(
-      new AdminUserController(new AdminUserService(new PrismaAdminUserRepository(database.client))),
+      {
+        users: new AdminUserController(
+          new AdminUserService({
+            users: new PrismaAdminUserRepository(database.client),
+            emailSender: identity.emailSender,
+            monitor,
+          }),
+        ),
+        roles: new AdminRoleController(new PrismaAdminRoleRepository(database.client)),
+      },
       authenticate,
     ),
   };
