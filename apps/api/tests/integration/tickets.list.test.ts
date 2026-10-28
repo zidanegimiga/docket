@@ -4,10 +4,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Container } from "../../src/container.js";
 import { seedTickets } from "../helpers/seed-tickets.js";
+import { signIn } from "../helpers/sign-in.js";
 import { createTestContainer, resetDatabase } from "../helpers/test-app.js";
 
 describe("GET /tickets", () => {
   let container: Container;
+  let auth: Record<string, string>;
 
   beforeAll(async () => {
     container = await createTestContainer();
@@ -20,10 +22,11 @@ describe("GET /tickets", () => {
 
   beforeEach(async () => {
     await resetDatabase(container);
+    ({ headers: auth } = await signIn(container));
   });
 
   const list = async (query = "") => {
-    const response = await request(container.app).get(`/tickets${query}`);
+    const response = await request(container.app).get(`/tickets${query}`).set(auth);
     return { status: response.status, body: response.body };
   };
 

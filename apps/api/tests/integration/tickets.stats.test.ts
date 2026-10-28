@@ -4,10 +4,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Container } from "../../src/container.js";
 import { seedTickets } from "../helpers/seed-tickets.js";
+import { signIn } from "../helpers/sign-in.js";
 import { createTestContainer, resetDatabase } from "../helpers/test-app.js";
 
 describe("GET /tickets/stats", () => {
   let container: Container;
+  let auth: Record<string, string>;
 
   beforeAll(async () => {
     container = await createTestContainer();
@@ -20,10 +22,11 @@ describe("GET /tickets/stats", () => {
 
   beforeEach(async () => {
     await resetDatabase(container);
+    ({ headers: auth } = await signIn(container, { roles: ["admin"] }));
   });
 
   const getStats = async () => {
-    const response = await request(container.app).get("/tickets/stats");
+    const response = await request(container.app).get("/tickets/stats").set(auth);
     return { status: response.status, stats: ticketStatsSchema.parse(response.body) };
   };
 
@@ -66,7 +69,7 @@ describe("GET /tickets/stats", () => {
   it("reflects a status change made through the API", async () => {
     await seedTickets(container, [{ status: "open" }]);
 
-    await request(container.app).patch("/tickets/1").send({ status: "in_progress" });
+    await request(container.app).patch("/tickets/1").set(auth).send({ status: "in_progress" });
     const { stats } = await getStats();
 
     expect(stats.byStatus).toEqual({ open: 0, in_progress: 1, closed: 0 });

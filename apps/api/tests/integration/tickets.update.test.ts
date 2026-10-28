@@ -4,10 +4,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Container } from "../../src/container.js";
 import { seedTickets } from "../helpers/seed-tickets.js";
+import { signIn } from "../helpers/sign-in.js";
 import { createTestContainer, resetDatabase } from "../helpers/test-app.js";
 
 describe("PATCH /tickets/:id", () => {
   let container: Container;
+  let auth: Record<string, string>;
 
   beforeAll(async () => {
     container = await createTestContainer();
@@ -20,12 +22,14 @@ describe("PATCH /tickets/:id", () => {
 
   beforeEach(async () => {
     await resetDatabase(container);
+    ({ headers: auth } = await signIn(container, { roles: ["admin"] }));
     await seedTickets(container, [{ title: "VPN drops", status: "open", priority: "medium" }]);
   });
 
   const patch = (id: string | number, body: unknown) =>
     request(container.app)
       .patch(`/tickets/${id}`)
+      .set(auth)
       .send(body as object);
 
   const storedTicket = () =>

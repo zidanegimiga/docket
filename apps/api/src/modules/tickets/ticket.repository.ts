@@ -1,7 +1,13 @@
 import type { CreateTicketBody, ListTicketsQuery, UpdateTicketBody } from "@docket/contracts";
 
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
-import type { StatusCounts, TicketEntity, TicketPage, TicketRepository } from "./ticket.types.js";
+import type {
+  StatusCounts,
+  TicketEntity,
+  TicketPage,
+  TicketRepository,
+  TicketUpdateFilter,
+} from "./ticket.types.js";
 
 const RECORD_NOT_FOUND = "P2025";
 
@@ -18,12 +24,13 @@ const ticketColumns = {
 export class PrismaTicketRepository implements TicketRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  create(data: CreateTicketBody): Promise<TicketEntity> {
+  create(data: CreateTicketBody, createdById: string): Promise<TicketEntity> {
     return this.db.ticket.create({
       data: {
         title: data.title,
         description: data.description ?? null,
         priority: data.priority,
+        createdById,
       },
       select: ticketColumns,
     });
@@ -49,10 +56,15 @@ export class PrismaTicketRepository implements TicketRepository {
     return { items, total };
   }
 
-  async update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null> {
+  async update(
+    id: number,
+    data: UpdateTicketBody,
+    { createdById }: TicketUpdateFilter = {},
+  ): Promise<TicketEntity | null> {
     try {
+      // The ownership condition is part of the same statement, so it cannot go stale.
       return await this.db.ticket.update({
-        where: { id },
+        where: { id, ...(createdById && { createdById }) },
         select: ticketColumns,
         data: {
           ...(data.status && { status: data.status }),
@@ -68,6 +80,11 @@ export class PrismaTicketRepository implements TicketRepository {
       }
       throw error;
     }
+  }
+
+  async exists(id: number): Promise<boolean> {
+    const ticket = await this.db.ticket.findUnique({ where: { id }, select: { id: true } });
+    return ticket !== null;
   }
 
   async countByStatus(): Promise<StatusCounts> {

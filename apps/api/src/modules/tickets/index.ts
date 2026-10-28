@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { RequestHandler, Router } from "express";
 
 import type { DatabaseProvider } from "../../core/database/database.interface.js";
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
@@ -11,12 +11,13 @@ import { TicketService } from "./ticket.service.js";
 export interface TicketModuleDeps {
   database: DatabaseProvider<PrismaClient>;
   monitor: Monitor;
+  authenticate: RequestHandler;
 }
 
-export function createTicketModule({ database, monitor }: TicketModuleDeps): Router {
+export function createTicketModule({ database, monitor, authenticate }: TicketModuleDeps): Router {
   const repository = new PrismaTicketRepository(database.client);
   const service = new TicketService(repository, monitor);
   const controller = new TicketController(service);
 
-  return ticketRoutes(controller);
+  return ticketRoutes(controller, authenticate);
 }

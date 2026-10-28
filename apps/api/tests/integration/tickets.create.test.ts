@@ -3,10 +3,12 @@ import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Container } from "../../src/container.js";
+import { signIn } from "../helpers/sign-in.js";
 import { createTestContainer, resetDatabase } from "../helpers/test-app.js";
 
 describe("POST /tickets", () => {
   let container: Container;
+  let auth: Record<string, string>;
 
   beforeAll(async () => {
     container = await createTestContainer();
@@ -19,11 +21,13 @@ describe("POST /tickets", () => {
 
   beforeEach(async () => {
     await resetDatabase(container);
+    ({ headers: auth } = await signIn(container));
   });
 
   const post = (body: unknown) =>
     request(container.app)
       .post("/tickets")
+      .set(auth)
       .send(body as object);
 
   it("creates a ticket with defaults and returns it", async () => {
@@ -81,6 +85,7 @@ describe("POST /tickets", () => {
   it("rejects a malformed JSON body", async () => {
     const response = await request(container.app)
       .post("/tickets")
+      .set(auth)
       .set("content-type", "application/json")
       .send('{"title":');
 

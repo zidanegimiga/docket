@@ -5,13 +5,15 @@ import type {
   TicketEntity,
   TicketPage,
   TicketRepository,
+  TicketUpdateFilter,
 } from "../../src/modules/tickets/ticket.types.js";
 
 export class InMemoryTicketRepository implements TicketRepository {
   readonly tickets: TicketEntity[] = [];
+  readonly creators = new Map<number, string>();
   private nextId = 1;
 
-  async create(data: CreateTicketBody): Promise<TicketEntity> {
+  async create(data: CreateTicketBody, createdById: string): Promise<TicketEntity> {
     const now = new Date();
     const ticket: TicketEntity = {
       id: this.nextId++,
@@ -24,6 +26,7 @@ export class InMemoryTicketRepository implements TicketRepository {
     };
 
     this.tickets.push(ticket);
+    this.creators.set(ticket.id, createdById);
     return ticket;
   }
 
@@ -36,9 +39,14 @@ export class InMemoryTicketRepository implements TicketRepository {
     return { items: matching.slice(start, start + limit), total: matching.length };
   }
 
-  async update(id: number, data: UpdateTicketBody): Promise<TicketEntity | null> {
+  async update(
+    id: number,
+    data: UpdateTicketBody,
+    { createdById }: TicketUpdateFilter = {},
+  ): Promise<TicketEntity | null> {
     const ticket = this.tickets.find((candidate) => candidate.id === id);
     if (!ticket) return null;
+    if (createdById && this.creators.get(id) !== createdById) return null;
 
     Object.assign(ticket, {
       ...(data.status && { status: data.status }),
@@ -46,6 +54,10 @@ export class InMemoryTicketRepository implements TicketRepository {
       updatedAt: new Date(),
     });
     return ticket;
+  }
+
+  async exists(id: number): Promise<boolean> {
+    return this.tickets.some((ticket) => ticket.id === id);
   }
 
   async countByStatus(): Promise<StatusCounts> {

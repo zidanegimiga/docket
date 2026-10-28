@@ -28,16 +28,14 @@ export interface RouterDeps {
 export function createRouter(deps: RouterDeps): Router {
   const { database, monitor, identity, cookies } = deps;
   const router = Router();
-  const identityModule = createIdentityModule({
-    ...deps,
-    authenticate: authenticate({
-      resolver: identity.principalResolver,
-      accessCookieName: sessionCookieNames(cookies.secure).access,
-    }),
+  const requireUser = authenticate({
+    resolver: identity.principalResolver,
+    accessCookieName: sessionCookieNames(cookies.secure).access,
   });
+  const identityModule = createIdentityModule({ ...deps, authenticate: requireUser });
 
   router.use("/health", createHealthModule({ database }));
-  router.use("/tickets", createTicketModule({ database, monitor }));
+  router.use("/tickets", createTicketModule({ database, monitor, authenticate: requireUser }));
   router.use("/auth", identityModule.auth);
   router.use("/.well-known", identityModule.wellKnown);
 
