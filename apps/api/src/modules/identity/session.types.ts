@@ -17,4 +17,8 @@ export interface RefreshTokenRecord extends NewRefreshToken {
 export interface RefreshTokenRepository {
   create(token: NewRefreshToken): Promise<RefreshTokenRecord>;
   findByHash(tokenHash: string): Promise<RefreshTokenRecord | null>;
+  /** Revokes the current token and stores its replacement atomically. Null if it was already revoked. */
+  rotate(currentId: string, next: NewRefreshToken, at: Date): Promise<RefreshTokenRecord | null>;
+  /** Revokes every still-active token in the family and returns how many were revoked. */
+  revokeFamily(familyId: string, at: Date): Promise<number>;
 }

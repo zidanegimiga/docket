@@ -24,4 +24,23 @@ export class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
   async findByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
     return this.tokens.find((token) => token.tokenHash === tokenHash) ?? null;
   }
+
+  async rotate(
+    currentId: string,
+    next: NewRefreshToken,
+    at: Date,
+  ): Promise<RefreshTokenRecord | null> {
+    const current = this.tokens.find((token) => token.id === currentId);
+    if (!current || current.revokedAt) return null;
+    const replacement = await this.create(next);
+    current.revokedAt = at;
+    current.replacedById = replacement.id;
+    return replacement;
+  }
+
+  async revokeFamily(familyId: string, at: Date): Promise<number> {
+    const active = this.tokens.filter((token) => token.familyId === familyId && !token.revokedAt);
+    for (const token of active) token.revokedAt = at;
+    return active.length;
+  }
 }
