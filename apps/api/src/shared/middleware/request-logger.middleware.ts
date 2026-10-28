@@ -4,6 +4,21 @@ import type { Request, RequestHandler } from "express";
 
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 
+// Query parameters that carry credentials: email links, OAuth callbacks and their errors.
+const SENSITIVE_QUERY_PARAMS = new Set(["token", "code", "state", "id_token", "access_token"]);
+
+/** The request URL with credential-bearing query values replaced, safe to write to logs. */
+export function loggableUrl(originalUrl: string): string {
+  const queryStart = originalUrl.indexOf("?");
+  if (queryStart === -1) return originalUrl;
+
+  const params = new URLSearchParams(originalUrl.slice(queryStart + 1));
+  for (const key of new Set(params.keys())) {
+    if (SENSITIVE_QUERY_PARAMS.has(key.toLowerCase())) params.set(key, "[redacted]");
+  }
+  return `${originalUrl.slice(0, queryStart)}?${params.toString()}`;
+}
+
 function routeLabel(req: Request): string {
   const routePath: unknown = req.route?.path;
   if (typeof routePath !== "string") return "unmatched";
@@ -21,7 +36,7 @@ export function requestLogger(monitor: Monitor): RequestHandler {
       const route = routeLabel(req);
       const context = {
         method: req.method,
-        path: req.originalUrl,
+        path: loggableUrl(req.originalUrl),
         route,
         statusCode: res.statusCode,
         durationMs,
