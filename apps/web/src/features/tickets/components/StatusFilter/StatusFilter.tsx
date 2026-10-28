@@ -1,9 +1,9 @@
 import { TICKET_STATUSES, type TicketStats, type TicketStatus } from "@docket/contracts";
-import Link from "next/link";
+
+import { FilterTabs } from "@/shared/components/FilterTabs";
 
 import { listHref } from "../../list-query";
 import { statusLabels } from "../../labels";
-import styles from "./StatusFilter.module.css";
 
 interface StatusFilterProps {
   current: TicketStatus | undefined;
@@ -22,28 +22,14 @@ function countFor(stats: TicketStats, status: TicketStatus | undefined): number 
 
 export function StatusFilter({ current, limit, stats }: StatusFilterProps) {
   return (
-    <nav aria-label="Filter by status">
-      <ul className={styles.filters}>
-        {options.map(({ value, label }) => (
-          <li key={label}>
-            <Link
-              className={styles.filter}
-              href={listHref({ status: value, limit })}
-              aria-current={value === current ? "page" : undefined}
-              replace
-              scroll={false}
-            >
-              {label}
-              {stats && (
-                <>
-                  {" "}
-                  <span className={styles.count}>{countFor(stats, value)}</span>
-                </>
-              )}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <FilterTabs
+      label="Filter by status"
+      tabs={options.map(({ value, label }) => ({
+        label,
+        href: listHref({ status: value, limit }),
+        current: value === current,
+        count: stats && countFor(stats, value),
+      }))}
+    />
   );
 }
