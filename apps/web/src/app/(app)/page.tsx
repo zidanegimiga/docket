@@ -1,5 +1,7 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
+import { RequirePermission } from "@/features/auth/components/RequirePermission";
+import { serverRequestContext } from "@/features/auth/server-session";
 import { ticketListQuery, ticketStatsQuery } from "@/features/tickets/api/ticket.queries";
 import { CreateTicketForm } from "@/features/tickets/components/CreateTicketForm";
 import { TicketList } from "@/features/tickets/components/TicketList";
@@ -14,12 +16,15 @@ interface TicketsPageProps {
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   const query = parseListQuery(await searchParams);
+  const context = await serverRequestContext();
   const queryClient = getQueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery(ticketListQuery(query)),
-    queryClient.prefetchQuery(ticketStatsQuery()),
-  ]);
+  if (context) {
+    await Promise.all([
+      queryClient.prefetchQuery(ticketListQuery(query, context)),
+      queryClient.prefetchQuery(ticketStatsQuery(context)),
+    ]);
+  }
 
   return (
     <div className={styles.layout}>
@@ -30,12 +35,14 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         </HydrationBoundary>
       </section>
 
-      <aside className={styles.newTicket} aria-labelledby="new-ticket-heading">
-        <h2 id="new-ticket-heading" className={styles.panelHeading}>
-          New ticket
-        </h2>
-        <CreateTicketForm />
-      </aside>
+      <RequirePermission permission="tickets:create">
+        <aside className={styles.newTicket} aria-labelledby="new-ticket-heading">
+          <h2 id="new-ticket-heading" className={styles.panelHeading}>
+            New ticket
+          </h2>
+          <CreateTicketForm />
+        </aside>
+      </RequirePermission>
     </div>
   );
 }

@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { AppHeader } from "@/shared/components/AppHeader";
-
-import styles from "./layout.module.css";
 import { Providers } from "./providers";
 
 import "./globals.css";
@@ -19,12 +16,12 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en">
-      <body>
-        <Providers>
-          <AppHeader />
-          <main className={styles.main}>{children}</main>
-        </Providers>
+    // Browser extensions add attributes to <html> and <body> before React hydrates (ColorZilla
+    // adds cz-shortcut-listen, Grammarly data-gr-*). This ignores attribute differences on these
+    // two elements only; mismatches anywhere inside are still reported.
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

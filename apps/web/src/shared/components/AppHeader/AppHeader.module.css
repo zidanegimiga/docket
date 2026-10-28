@@ -5,7 +5,8 @@
 
 .inner {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  min-height: 3.25rem;
   gap: var(--space-3);
   max-width: var(--content-width);
   margin: 0 auto;

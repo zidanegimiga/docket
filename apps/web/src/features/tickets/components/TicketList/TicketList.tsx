@@ -3,6 +3,8 @@
 import type { ListTicketsQuery } from "@docket/contracts";
 import { useSearchParams } from "next/navigation";
 
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { canUpdateTicket } from "@/features/auth/permissions";
 import { Button } from "@/shared/components/Button";
 import { Pagination } from "@/shared/components/Pagination";
 
@@ -25,6 +27,7 @@ export function TicketList() {
   const query = parseListQuery(Object.fromEntries(searchParams));
   const { data, isPending, isError, isPlaceholderData, refetch } = useTickets(query);
   const { data: stats } = useTicketStats();
+  const { data: user } = useCurrentUser();
 
   return (
     <div className={styles.list}>
@@ -52,6 +55,7 @@ export function TicketList() {
             tickets={data.data}
             emptyMessage={emptyMessage(query, data.pagination.total)}
             stale={isPlaceholderData}
+            canUpdate={(ticket) => canUpdateTicket(user, ticket)}
           />
           <Pagination
             page={data.pagination.page}

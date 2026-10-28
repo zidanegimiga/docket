@@ -1,0 +1,32 @@
+.page {
+  display: grid;
+  min-height: 100vh;
+  padding: var(--space-8) var(--space-4);
+  place-items: start center;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 24rem;
+  margin-top: 8vh;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+}
+
+.error {
+  composes: notice;
+  border-left-color: var(--color-danger);
+  color: var(--color-danger);
+}

@@ -2,6 +2,7 @@ import type { Ticket } from "@docket/contracts";
 
 import { DISPLAY_TIME_ZONE, formatDateTime } from "@/shared/format/date";
 
+import { statusLabels } from "../../labels";
 import { PriorityText } from "../PriorityText";
 import { TicketStatusSelect } from "../TicketStatusSelect";
 import styles from "./TicketTable.module.css";
@@ -10,9 +11,18 @@ interface TicketTableProps {
   tickets: Ticket[];
   emptyMessage: string;
   stale?: boolean;
+  /** Whether the viewer may change a ticket's status; otherwise the status is shown as text. */
+  canUpdate?: (ticket: Ticket) => boolean;
 }
 
-export function TicketTable({ tickets, emptyMessage, stale = false }: TicketTableProps) {
+const readOnly = () => false;
+
+export function TicketTable({
+  tickets,
+  emptyMessage,
+  stale = false,
+  canUpdate = readOnly,
+}: TicketTableProps) {
   if (tickets.length === 0) {
     return <p className={styles.empty}>{emptyMessage}</p>;
   }
@@ -42,7 +52,13 @@ export function TicketTable({ tickets, emptyMessage, stale = false }: TicketTabl
                 )}
               </td>
               <td>
-                <TicketStatusSelect ticket={ticket} />
+                {canUpdate(ticket) ? (
+                  <TicketStatusSelect ticket={ticket} />
+                ) : (
+                  <span className={styles.status} data-status={ticket.status}>
+                    {statusLabels[ticket.status]}
+                  </span>
+                )}
               </td>
               <td>
                 <PriorityText priority={ticket.priority} />

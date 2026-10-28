@@ -80,3 +80,20 @@
   color: var(--color-text-muted);
   text-align: center;
 }
+
+.status {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.status[data-status="open"] {
+  color: var(--color-status-open);
+}
+
+.status[data-status="in_progress"] {
+  color: var(--color-status-in-progress);
+}
+
+.status[data-status="closed"] {
+  color: var(--color-status-closed);
+}

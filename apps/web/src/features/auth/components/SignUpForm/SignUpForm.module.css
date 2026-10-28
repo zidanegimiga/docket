@@ -1,0 +1,5 @@
+.done {
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg);
+}

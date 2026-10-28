@@ -1,15 +1,30 @@
 import { getApiUrl } from "@/shared/config/api-url";
 
 import { ApiError } from "./api-error";
+import { refreshSession, sessionExpired } from "./session";
 
 type QueryValue = string | number | boolean | undefined;
 
-export interface RequestOptions {
+export interface RequestOptions extends RequestContext {
   method?: "GET" | "POST" | "PATCH";
   query?: Record<string, QueryValue>;
   body?: unknown;
   signal?: AbortSignal;
 }
+
+/** Extra headers for one request, such as the caller's credentials when rendering on the server. */
+export interface RequestContext {
+  headers?: Record<string, string>;
+}
+
+// 401 codes a refreshed session can fix. Others, such as wrong credentials, are final.
+const SESSION_ERRORS = new Set([
+  "AUTHENTICATION_REQUIRED",
+  "ACCESS_TOKEN_EXPIRED",
+  "INVALID_ACCESS_TOKEN",
+]);
+// Endpoints that manage the session themselves and must never trigger a refresh.
+const SESSION_ENDPOINTS = ["/auth/login", "/auth/signup", "/auth/refresh", "/auth/logout"];
 
 interface ErrorEnvelope {
   error?: {
@@ -48,26 +63,51 @@ async function toApiError(response: Response): Promise<ApiError> {
   );
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", query, body, signal } = options;
+async function send(path: string, options: RequestOptions): Promise<Response> {
+  const { method = "GET", query, body, signal, headers } = options;
   const hasBody = body !== undefined;
 
-  let response: Response;
   try {
-    response = await fetch(buildUrl(path, query), {
+    return await fetch(buildUrl(path, query), {
       method,
       signal: signal ?? null,
       cache: "no-store",
-      headers: hasBody ? { "content-type": "application/json" } : {},
+      headers: { ...(hasBody && { "content-type": "application/json" }), ...headers },
       body: hasBody ? JSON.stringify(body) : null,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ApiError(0, "NETWORK_ERROR", "Could not reach the server");
   }
+}
+
+function canRefresh(path: string, error: ApiError): boolean {
+  return (
+    typeof window !== "undefined" &&
+    error.status === 401 &&
+    SESSION_ERRORS.has(error.code) &&
+    !SESSION_ENDPOINTS.includes(path)
+  );
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  let response = await send(path, options);
 
   if (!response.ok) {
-    throw await toApiError(response);
+    const error = await toApiError(response);
+    if (!canRefresh(path, error)) throw error;
+
+    // Retry once with a renewed session; if that is impossible the user has to sign in again.
+    if (!(await refreshSession())) {
+      sessionExpired();
+      throw error;
+    }
+    response = await send(path, options);
+    if (!response.ok) {
+      const retryError = await toApiError(response);
+      if (canRefresh(path, retryError)) sessionExpired();
+      throw retryError;
+    }
   }
 
   if (response.status === 204) {

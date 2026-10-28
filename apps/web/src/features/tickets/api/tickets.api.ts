@@ -10,13 +10,15 @@ import {
   type UpdateTicketBody,
 } from "@docket/contracts";
 
-import { request } from "@/shared/api/http-client";
+import { request, type RequestContext } from "@/shared/api/http-client";
 
 export async function listTickets(
   { status, page, limit }: ListTicketsQuery,
   signal?: AbortSignal,
+  context: RequestContext = {},
 ): Promise<TicketList> {
   const data = await request<unknown>("/tickets", {
+    ...context,
     query: { status, page, limit },
     ...(signal && { signal }),
   });
@@ -33,7 +35,10 @@ export async function updateTicket(id: number, data: UpdateTicketBody): Promise<
   return ticketSchema.parse(result);
 }
 
-export async function getTicketStats(signal?: AbortSignal): Promise<TicketStats> {
-  const data = await request<unknown>("/tickets/stats", { ...(signal && { signal }) });
+export async function getTicketStats(
+  signal?: AbortSignal,
+  context: RequestContext = {},
+): Promise<TicketStats> {
+  const data = await request<unknown>("/tickets/stats", { ...context, ...(signal && { signal }) });
   return ticketStatsSchema.parse(data);
 }

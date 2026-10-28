@@ -1,0 +1,6 @@
+.message {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+}

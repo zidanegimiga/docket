@@ -7,6 +7,11 @@ interface ButtonProps extends ComponentProps<"button"> {
   busy?: boolean;
 }
 
+/** Classes for a link that should look like a button. */
+export function buttonClassName(variant: ButtonProps["variant"] = "secondary"): string {
+  return [styles.button, variant === "primary" && styles.primary].filter(Boolean).join(" ");
+}
+
 export function Button({
   variant = "secondary",
   busy = false,
@@ -15,9 +20,7 @@ export function Button({
   className,
   ...rest
 }: ButtonProps) {
-  const classes = [styles.button, variant === "primary" && styles.primary, className]
-    .filter(Boolean)
-    .join(" ");
+  const classes = [buttonClassName(variant), className].filter(Boolean).join(" ");
 
   return (
     <button
