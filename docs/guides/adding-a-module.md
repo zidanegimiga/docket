@@ -27,14 +27,32 @@ sees the module's classes.
 export interface CommentModuleDeps {
   database: DatabaseProvider<PrismaClient>;
   monitor: Monitor;
+  authenticate: RequestHandler;
 }
 
-export function createCommentModule({ database, monitor }: CommentModuleDeps): Router {
+export function createCommentModule({
+  database,
+  monitor,
+  authenticate,
+}: CommentModuleDeps): Router {
   const repository = new PrismaCommentRepository(database.client);
   const service = new CommentService(repository, monitor);
   const controller = new CommentController(service);
 
-  return commentRoutes(controller);
+  return commentRoutes(controller, authenticate);
+}
+```
+
+The routes file starts with `router.use(authenticate)` and gives every route its permission
+guard:
+
+```ts
+export function commentRoutes(controller: CommentController, authenticate: RequestHandler): Router {
+  const router = Router();
+  router.use(authenticate);
+
+  router.get("/", requirePermission("comments:read"), validate({ query: ... }), controller.list);
+  return router;
 }
 ```
 
@@ -57,7 +75,7 @@ because it never touches the Prisma client.
 6. **Register the module** in `src/routes.ts`. This is the only file that maps URL prefixes:
 
    ```ts
-   router.use("/comments", createCommentModule({ database, monitor }));
+   router.use("/comments", createCommentModule({ database, monitor, authenticate: requireUser }));
    ```
 
    If the module needs a new provider, add it to `RouterDeps` and pass it from `container.ts`.
@@ -66,6 +84,8 @@ because it never touches the Prisma client.
 
 ## Rules
 
+- Every module is behind `authenticate` unless it is deliberately public, like `health`. New
+  permissions follow [Adding an endpoint, step 2](adding-an-endpoint.md).
 - Modules never import from other modules. Shared code moves to `src/shared/`.
 - Services depend on interfaces, never on Prisma, Express or Pino.
 - Only `container.ts` constructs concrete providers.

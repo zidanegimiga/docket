@@ -13,6 +13,7 @@ Back to the [project README](../../README.md).
 - [Rendering](#rendering)
 - [State](#state)
 - [Data fetching](#data-fetching)
+- [Sign-in and sessions](#sign-in-and-sessions)
 - [Optimistic status changes](#optimistic-status-changes)
 - [Components and styling](#components-and-styling)
 - [Accessibility](#accessibility)
@@ -109,6 +110,21 @@ JavaScript loads and support open in new tab.
 - Queries retry once on server and network errors, never on 4xx responses.
 - The server creates a new `QueryClient` per request so data never leaks between users; the
   browser keeps one so a suspended render cannot discard the cache.
+
+## Sign-in and sessions
+
+- `(auth)/login` and `(auth)/signup` are public. Everything under `(app)/` sits inside
+  `SessionGate`, which shows pending users a waiting screen instead of the app.
+- `src/proxy.ts` sends page requests without any session cookie to `/login?returnTo=...`. It only
+  checks that cookies exist; the API decides whether they are valid.
+- Server components forward the access cookie as a bearer token when prefetching
+  (`serverRequestContext()`), and skip the prefetch when it has lapsed.
+- In the browser, `shared/api/http-client.ts` renews an expired session once for all requests
+  that failed together, retries them, and redirects to login if renewal fails.
+- Controls the user lacks permission for are hidden with `RequirePermission` and the helpers in
+  `features/auth/permissions.ts`; the API enforces the same rules.
+
+The design is in [docs/authentication.md](../../docs/authentication.md).
 
 ## Optimistic status changes
 

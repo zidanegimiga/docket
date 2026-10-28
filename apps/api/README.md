@@ -202,9 +202,13 @@ model Ticket {
 
 ## Endpoints
 
-All errors use the envelope shown in [Errors](#errors).
+All errors use the envelope shown in [Errors](#errors). Every `/tickets` route needs a signed-in
+caller with the permission named below; sign-in, session, OAuth and admin endpoints are listed in
+[docs/authentication.md](../../docs/authentication.md#endpoints).
 
 ### `POST /tickets`
+
+Needs `tickets:create`. The ticket records its creator.
 
 ```http
 POST /tickets
@@ -231,6 +235,8 @@ Content-Type: application/json
 
 ### `GET /tickets?status=&page=&limit=`
 
+Needs `tickets:read`.
+
 | Param    | Default | Rules                             |
 | -------- | ------- | --------------------------------- |
 | `status` | none    | `open`, `in_progress` or `closed` |
@@ -248,6 +254,8 @@ Newest first. A page past the end returns `200` with empty `data`.
 
 ### `PATCH /tickets/:id`
 
+Needs `tickets:update:any`, or `tickets:update:own` for tickets the caller created (otherwise 403 `NOT_TICKET_OWNER`).
+
 ```http
 PATCH /tickets/12
 Content-Type: application/json
@@ -261,6 +269,8 @@ range, so `/tickets/1e3` or `/tickets/99999999999` return `400`.
 
 ### `GET /tickets/stats`
 
+Needs `tickets:read`.
+
 ```json
 { "total": 9, "byStatus": { "open": 6, "in_progress": 1, "closed": 2 } }
 ```
@@ -268,6 +278,8 @@ range, so `/tickets/1e3` or `/tickets/99999999999` return `400`.
 Every status is present even when its count is zero.
 
 ### `GET /health`
+
+Public.
 
 `200` with `{ "status": "ok", "checks": { "database": "up" } }`, or `503` with `"degraded"` when
 the database is unreachable.

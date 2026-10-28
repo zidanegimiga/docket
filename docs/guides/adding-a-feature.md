@@ -47,13 +47,15 @@ export const ticketKeys = {
 };
 ```
 
-**Query options** in the `.queries.ts` file, shared by the server prefetch and the client hook:
+**Query options** in the `.queries.ts` file, shared by the server prefetch and the client hook.
+The optional context carries the caller's credentials when rendering on the server; the browser
+sends cookies on its own:
 
 ```ts
-export function ticketStatsQuery() {
+export function ticketStatsQuery(context?: RequestContext) {
   return queryOptions({
     queryKey: ticketKeys.stats(),
-    queryFn: ({ signal }) => getTicketStats(signal),
+    queryFn: ({ signal }) => getTicketStats(signal, context),
   });
 }
 ```
@@ -62,14 +64,22 @@ export function ticketStatsQuery() {
 feature root on success. Use an optimistic update only when the change is small and very likely
 to succeed, and always pair it with a snapshot and rollback (see `useUpdateTicket`).
 
-**Server prefetch** in the page, in parallel with anything else the page needs:
+**Server prefetch** in the page, in parallel with anything else the page needs. Skip it when the
+access token has lapsed; the browser then renews the session and loads the data itself:
 
 ```ts
-await Promise.all([
-  queryClient.prefetchQuery(ticketListQuery(query)),
-  queryClient.prefetchQuery(ticketStatsQuery()),
-]);
+const context = await serverRequestContext();
+if (context) {
+  await Promise.all([
+    queryClient.prefetchQuery(ticketListQuery(query, context)),
+    queryClient.prefetchQuery(ticketStatsQuery(context)),
+  ]);
+}
 ```
+
+**Pages and permissions.** Signed-in pages go under `src/app/(app)/`, whose layout handles the
+session and pending users. Hide controls the user cannot use with `<RequirePermission>` or the
+helpers in `features/auth/permissions.ts`, mirroring the API's rule.
 
 ## State placement
 
@@ -82,9 +92,10 @@ await Promise.all([
 ## Definition of done
 
 - [ ] Contract, API and UI agree, enforced by shared schemas
+- [ ] API routes guarded by permission; UI hides what the user's permissions do not allow
 - [ ] Unit, integration and component tests cover success, validation and failure paths
 - [ ] Each new test was seen failing when the behaviour it covers was broken
 - [ ] Accessible names and error announcements checked in component tests
 - [ ] Works in light and dark mode and at phone width
-- [ ] `npm run typecheck`, `npm test`, `npm run build` and `npm run format:check` pass
+- [ ] `npm run check` and `npm run build` pass
 - [ ] README updated if the API, setup or a decision changed

@@ -5,6 +5,9 @@ progress, closed) and a priority (low, medium, high). The web app lists tickets 
 filter and pagination, shows how many tickets sit in each status, creates new tickets and changes
 status inline, all through a small REST API backed by PostgreSQL.
 
+People sign in with a password or Google. New accounts wait for an administrator's approval, and
+what each person can do comes from roles and permissions that administrators manage.
+
 | Live         | URL                                           |
 | ------------ | --------------------------------------------- |
 | Web app      | <https://docket-puce-eight.vercel.app>        |
@@ -35,13 +38,18 @@ npm run db:deploy -w @docket/api
 npm run dev
 ```
 
+Sign up at <http://localhost:3000/signup>, then make that account the first administrator:
+
+```bash
+npm run admin:promote -w @docket/api -- --email you@example.com
+```
+
 Tests need the database running:
 
 ```bash
+npm run check          # Prettier, typecheck and every test
 npm test               # all API and web tests
-npm run typecheck      # every workspace
 npm run build          # production builds
-npm run format:check   # Prettier
 ```
 
 ## How it fits together
@@ -90,6 +98,7 @@ docket/
 | [Infrastructure](docs/infrastructure.md)  | Turborepo, CI, Docker images, deployment                                                             |
 | [Authentication](docs/authentication.md)  | Sign-in, tokens, roles and permissions, and the path to a separate user service                      |
 | [Guides](docs/guides/)                    | Step-by-step patterns for extending the project                                                      |
+| [AGENTS.md](AGENTS.md)                    | Commands, conventions and project rules in one place, for contributors and coding agents             |
 
 ## Decisions and tradeoffs
 
@@ -119,7 +128,8 @@ or hand-edited link.
 
 With more time I would add:
 
-- Authentication, with per-user time zones and an assignee on tickets
+- The admin screens for approving users and managing roles, and an audit log
+- Per-user time zones and an assignee on tickets
 - A ticket detail view with `GET /tickets/:id` and editable title and description
 - Cursor pagination and full-text search
 - ESLint with typescript-eslint, which Prettier and strict TypeScript only partly replace
