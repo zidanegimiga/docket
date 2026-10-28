@@ -288,12 +288,20 @@ Set `TEST_DATABASE_URL` to use a different database.
 
 ## Environment
 
-| Variable           | Default       | Purpose                                                                 |
-| ------------------ | ------------- | ----------------------------------------------------------------------- |
-| `DATABASE_URL`     | none          | PostgreSQL connection string (required)                                 |
-| `PORT`             | `4000`        | HTTP port                                                               |
-| `NODE_ENV`         | `development` | `development` enables pretty logs                                       |
-| `LOG_LEVEL`        | `info`        | `fatal` to `trace`, or `silent`                                         |
-| `TRUST_PROXY_HOPS` | `1`           | Proxies in front of the API; picks the client IP from `X-Forwarded-For` |
+| Variable                                   | Default                 | Purpose                                                                          |
+| ------------------------------------------ | ----------------------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                             | none                    | PostgreSQL connection string (required)                                          |
+| `PORT`                                     | `4000`                  | HTTP port                                                                        |
+| `NODE_ENV`                                 | `development`           | `development` enables pretty logs                                                |
+| `LOG_LEVEL`                                | `info`                  | `fatal` to `trace`, or `silent`                                                  |
+| `TRUST_PROXY_HOPS`                         | `1`                     | Proxies in front of the API; picks the client IP from `X-Forwarded-For`          |
+| `WEB_ORIGIN`                               | `http://localhost:3000` | The web app's origin, for the Origin check and OAuth redirects                   |
+| `AUTH_PRIVATE_KEY`                         | none                    | Ed25519 signing key (`npm run auth:keys -w @docket/api`); required in production |
+| `AUTH_ALLOW_EPHEMERAL_KEY`                 | `false`                 | Allow a temporary key in production mode (Docker Compose only)                   |
+| `AUTH_ISSUER`                              | `http://localhost:4000` | Issuer claim in access tokens                                                    |
+| `AUTH_AUDIENCE`                            | `docket-api`            | Audience claim in access tokens                                                  |
+| `ACCESS_TOKEN_TTL_SECONDS`                 | `600`                   | Access token lifetime, 60 to 3600                                                |
+| `REFRESH_TOKEN_TTL_DAYS`                   | `30`                    | Refresh token lifetime, 1 to 90                                                  |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | none                    | Enable Google sign-in when both are set                                          |
 
 The environment is validated at startup and every invalid variable is reported at once.

@@ -13,7 +13,7 @@ function closeServer(server: Server): Promise<void> {
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const { app, database, logger } = createContainer(env);
+  const { app, database, logger } = await createContainer(env);
 
   await database.connect();
 

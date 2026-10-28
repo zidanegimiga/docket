@@ -8,7 +8,7 @@ describe("security headers", () => {
   let container: Container;
 
   beforeAll(async () => {
-    container = createTestContainer();
+    container = await createTestContainer();
     await container.database.connect();
   });
 

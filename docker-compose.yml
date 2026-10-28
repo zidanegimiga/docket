@@ -24,6 +24,11 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tickets}:${POSTGRES_PASSWORD:-tickets}@db:5432/${POSTGRES_DB:-tickets}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-3000}
+      AUTH_PRIVATE_KEY: ${AUTH_PRIVATE_KEY:-}
+      AUTH_ALLOW_EPHEMERAL_KEY: "true"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       - "${API_PORT:-4000}:4000"
     depends_on:

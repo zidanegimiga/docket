@@ -10,7 +10,7 @@ describe("GET /tickets/stats", () => {
   let container: Container;
 
   beforeAll(async () => {
-    container = createTestContainer();
+    container = await createTestContainer();
     await container.database.connect();
   });
 
