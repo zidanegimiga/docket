@@ -12,13 +12,14 @@ export interface AppDeps {
   logger: Logger;
   monitor: Monitor;
   router: Router;
+  trustProxyHops: number;
 }
 
-export function createApp({ logger, monitor, router }: AppDeps): Express {
+export function createApp({ logger, monitor, router, trustProxyHops }: AppDeps): Express {
   const app = express();
 
   app.disable("x-powered-by");
-  app.set("trust proxy", 1);
+  app.set("trust proxy", trustProxyHops);
 
   app.use(securityHeaders());
   app.use(requestContext(logger));

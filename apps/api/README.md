@@ -288,11 +288,12 @@ Set `TEST_DATABASE_URL` to use a different database.
 
 ## Environment
 
-| Variable       | Default       | Purpose                                 |
-| -------------- | ------------- | --------------------------------------- |
-| `DATABASE_URL` | none          | PostgreSQL connection string (required) |
-| `PORT`         | `4000`        | HTTP port                               |
-| `NODE_ENV`     | `development` | `development` enables pretty logs       |
-| `LOG_LEVEL`    | `info`        | `fatal` to `trace`, or `silent`         |
+| Variable           | Default       | Purpose                                                                 |
+| ------------------ | ------------- | ----------------------------------------------------------------------- |
+| `DATABASE_URL`     | none          | PostgreSQL connection string (required)                                 |
+| `PORT`             | `4000`        | HTTP port                                                               |
+| `NODE_ENV`         | `development` | `development` enables pretty logs                                       |
+| `LOG_LEVEL`        | `info`        | `fatal` to `trace`, or `silent`                                         |
+| `TRUST_PROXY_HOPS` | `1`           | Proxies in front of the API; picks the client IP from `X-Forwarded-For` |
 
 The environment is validated at startup and every invalid variable is reported at once.

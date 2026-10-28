@@ -14,6 +14,7 @@ function routeLabel(req: Request): string {
 export function requestLogger(monitor: Monitor): RequestHandler {
   return (req, res, next) => {
     const startedAt = performance.now();
+    req.log.debug("Request received", { forwardedFor: req.get("x-forwarded-for") ?? null });
 
     res.on("close", () => {
       const durationMs = Math.round(performance.now() - startedAt);
@@ -24,6 +25,7 @@ export function requestLogger(monitor: Monitor): RequestHandler {
         route,
         statusCode: res.statusCode,
         durationMs,
+        ip: req.ip,
       };
 
       if (!res.writableFinished) {

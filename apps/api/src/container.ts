@@ -31,6 +31,7 @@ export function createContainer(env: Env): Container {
     logger,
     monitor,
     router: createRouter({ database, monitor }),
+    trustProxyHops: env.TRUST_PROXY_HOPS,
   });
 
   return { env, logger, monitor, database, app };
