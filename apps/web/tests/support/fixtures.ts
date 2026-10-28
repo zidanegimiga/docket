@@ -1,4 +1,11 @@
-import type { CurrentUser, Pagination, Ticket, TicketList } from "@docket/contracts";
+import type {
+  AdminUser,
+  CurrentUser,
+  Pagination,
+  Role,
+  Ticket,
+  TicketList,
+} from "@docket/contracts";
 
 export function makeTicket(overrides: Partial<Ticket> = {}): Ticket {
   return {
@@ -41,4 +48,45 @@ export function makeUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
     hasPassword: true,
     ...overrides,
   };
+}
+
+export function makeAdminUser(overrides: Partial<AdminUser> = {}): AdminUser {
+  return {
+    id: "0199c3a2-6f1e-7c3a-9b1d-2f4e6a8c0d02",
+    email: "grace@example.com",
+    name: "Grace Hopper",
+    status: "pending",
+    roles: [{ id: MEMBER_ROLE_ID, name: "member" }],
+    directPermissions: [],
+    effectivePermissions: [],
+    providers: [],
+    hasPassword: true,
+    createdAt: "2026-10-20T09:00:00.000Z",
+    lastLoginAt: null,
+    ...overrides,
+  };
+}
+
+export const ADMIN_ROLE_ID = "0199c3a2-0000-7000-8000-00000000000a";
+export const MEMBER_ROLE_ID = "0199c3a2-0000-7000-8000-00000000000b";
+
+export function makeRoles(): Role[] {
+  return [
+    {
+      id: ADMIN_ROLE_ID,
+      name: "admin",
+      description: "Full access",
+      permissions: ["users:read", "users:manage"],
+      isSystem: true,
+      userCount: 1,
+    },
+    {
+      id: MEMBER_ROLE_ID,
+      name: "member",
+      description: "Works on tickets",
+      permissions: ["tickets:read"],
+      isSystem: true,
+      userCount: 3,
+    },
+  ];
 }
