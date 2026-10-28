@@ -9,6 +9,9 @@ import { AuthController } from "./auth.controller.js";
 import { authRoutes } from "./auth.routes.js";
 import { AccessService } from "./access.service.js";
 import { AuthService } from "./auth.service.js";
+import { OAuthController } from "./oauth.controller.js";
+import { oauthRoutes } from "./oauth.routes.js";
+import { OAuthService } from "./oauth.service.js";
 import type { SessionCookieSettings } from "./session-cookies.js";
 import { PrismaRefreshTokenRepository } from "./session.repository.js";
 import { PrismaUserRepository } from "./user.repository.js";
@@ -21,6 +24,8 @@ export interface IdentityModuleDeps {
   identity: Identity;
   logger: Logger;
   cookies: SessionCookieSettings;
+  /** Where the web app runs; OAuth callbacks go through its /api proxy. */
+  webOrigin: string;
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
   authenticate: RequestHandler;
@@ -39,6 +44,7 @@ export function createIdentityModule({
   identity,
   logger,
   cookies,
+  webOrigin,
   refreshTokenTtlDays,
   refreshReuseGraceSeconds,
   authenticate,
@@ -56,11 +62,25 @@ export function createIdentityModule({
     refreshReuseGraceSeconds,
   });
 
+  const oauthService = new OAuthService({
+    providers: identity.oauthProviders,
+    auth: authService,
+    monitor,
+    redirectUriFor: (providerId) =>
+      `${webOrigin}${cookies.apiPrefix}/auth/oauth/${providerId}/callback`,
+  });
+
+  const auth = authRoutes(
+    new AuthController(authService, cookies, identity.oauthProviders),
+    authenticate,
+  );
+  auth.use(
+    "/oauth",
+    oauthRoutes(new OAuthController(oauthService, monitor, { cookies, webOrigin })),
+  );
+
   return {
-    auth: authRoutes(
-      new AuthController(authService, cookies, identity.oauthProviders),
-      authenticate,
-    ),
+    auth,
     wellKnown: wellKnownRoutes(new WellKnownController(identity.tokenIssuer)),
   };
 }
