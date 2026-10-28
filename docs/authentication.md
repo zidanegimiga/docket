@@ -36,7 +36,9 @@ OAuth, email) behind interfaces in `apps/api/src/core/`.
 | Status          | `pending` after sign-up, `active` once approved, `disabled` to block         |
 | Verification    | `verification_tokens`: single-use email links, stored as SHA-256 hashes      |
 
-A user can have a password, one or more linked OAuth identities, or both.
+A user can have a password, one or more linked OAuth identities, or both. Every new account gets
+the `member` role, so approving someone is a single status change; until then their pending status
+withholds the role's permissions.
 
 **Pending users can sign in.** They hold no permissions and the web app shows them a waiting
 screen, which can check for approval. Disabled users cannot sign in or refresh.
@@ -143,12 +145,22 @@ Permission-based role-based access control, deny by default.
 
 ## Administration
 
-| Endpoint                 | Needs          | Status                                          |
-| ------------------------ | -------------- | ----------------------------------------------- |
-| `GET /admin/users`       | `users:read`   | Built: filter, search, pending first, paginated |
-| `PATCH /admin/users/:id` | `users:manage` | Planned: approve, disable, roles, grants        |
-| Role management          | `roles:manage` | Planned                                         |
-| Audit log                | `audit:read`   | Planned                                         |
+| Endpoint                 | Needs          | Purpose                                                        |
+| ------------------------ | -------------- | -------------------------------------------------------------- |
+| `GET /admin/users`       | `users:read`   | Filter by status, search, pending first, paginated             |
+| `PATCH /admin/users/:id` | `users:manage` | Approve, disable or re-enable; replace roles and direct grants |
+| `GET /admin/roles`       | `users:read`   | Roles with permissions and user counts, for assigning them     |
+| Role management          | `roles:manage` | Planned                                                        |
+| Audit log                | `audit:read`   | Planned                                                        |
+
+Changes to a user are checked and written in one transaction. Administrators cannot disable
+themselves or remove their own `users:manage`, and the last active administrator cannot be
+disabled or lose the admin role; concurrent changes are serialised so two administrators cannot
+demote each other at once. Disabling revokes the user's refresh tokens immediately, and their
+next request with a still-valid access token signs them out. Approval emails the user.
+
+The web app's `/admin/users` page lists users, approves pending ones in one click and edits status,
+roles and extra permissions. People with `users:read` but not `users:manage` see it read-only.
 
 The first administrator is made from the command line, by someone with database access, after
 signing up normally:
