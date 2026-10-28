@@ -37,7 +37,7 @@ export function authenticate({ resolver, accessCookieName }: AuthenticateOptions
 }
 
 /** The caller of a route behind authenticate(). */
-export function principalOf(req: Request): Principal {
+export function principalOf(req: Pick<Request, "principal">): Principal {
   if (!req.principal) {
     throw new Error("principalOf() used on a route without authenticate()");
   }
