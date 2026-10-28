@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TicketList } from "@/features/tickets/components/TicketList";
 
-import { makeTicket, makeTicketList } from "../support/fixtures";
+import { makeTicket, makeTicketList, makeUser } from "../support/fixtures";
 import { renderWithClient } from "../support/render";
 import { server } from "../support/server";
 
@@ -88,5 +88,30 @@ describe("TicketList", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Tickets could not be loaded.");
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Back online")).toBeInTheDocument();
+  });
+
+  it("lets a member change the status of their own tickets only", async () => {
+    const member = makeUser({
+      permissions: ["tickets:read", "tickets:create", "tickets:update:own"],
+    });
+    server.use(
+      http.get("/api/auth/me", () => HttpResponse.json({ user: member })),
+      http.get("/api/tickets", () =>
+        HttpResponse.json(
+          makeTicketList([
+            makeTicket({ id: 2, title: "Mine", createdById: member.id }),
+            makeTicket({ id: 1, title: "A colleague's", status: "in_progress" }),
+          ]),
+        ),
+      ),
+    );
+
+    renderWithClient(<TicketList />);
+
+    expect(
+      await screen.findByRole("combobox", { name: "Status for ticket #2" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Status for ticket #1" })).toBeNull();
+    expect(screen.getByRole("row", { name: /A colleague's/ })).toHaveTextContent("In progress");
   });
 });

@@ -11,6 +11,7 @@ describe("TicketTable", () => {
     renderWithClient(
       <TicketTable
         emptyMessage="No tickets yet."
+        canUpdate={() => true}
         tickets={[
           makeTicket({
             id: 14,
