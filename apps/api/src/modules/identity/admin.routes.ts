@@ -1,9 +1,15 @@
-import { listUsersQuerySchema, updateUserSchema } from "@docket/contracts";
+import {
+  createRoleSchema,
+  listUsersQuerySchema,
+  updateRoleSchema,
+  updateUserSchema,
+} from "@docket/contracts";
 import { type RequestHandler, Router } from "express";
 
 import { requirePermission } from "../../shared/middleware/authorize.middleware.js";
 import { validate } from "../../shared/middleware/validate.middleware.js";
 import type { AdminRoleController } from "./admin-roles.controller.js";
+import { roleIdParamsSchema } from "./admin-roles.schemas.js";
 import type { AdminUserController } from "./admin-users.controller.js";
 import { userIdParamsSchema } from "./admin-users.schemas.js";
 
@@ -35,6 +41,24 @@ export function adminRoutes(
 
   // Anyone who can see users can see the roles they hold; changing roles needs roles:manage.
   router.get("/roles", requirePermission("users:read"), roles.list);
+  router.post(
+    "/roles",
+    requirePermission("roles:manage"),
+    validate({ body: createRoleSchema }),
+    roles.create,
+  );
+  router.patch(
+    "/roles/:id",
+    requirePermission("roles:manage"),
+    validate({ params: roleIdParamsSchema, body: updateRoleSchema }),
+    roles.update,
+  );
+  router.delete(
+    "/roles/:id",
+    requirePermission("roles:manage"),
+    validate({ params: roleIdParamsSchema }),
+    roles.delete,
+  );
 
   return router;
 }

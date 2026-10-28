@@ -1,22 +1,29 @@
-import { PERMISSIONS, type Permission } from "@docket/contracts";
+import type { CreateRoleBody, UpdateRoleBody } from "@docket/contracts";
 import type { RequestHandler } from "express";
 
-import type { AdminRoleRepository } from "./admin-roles.repository.js";
+import type { RoleIdParams } from "./admin-roles.schemas.js";
+import type { AdminRoleService } from "./admin-roles.service.js";
 
-const isCatalogPermission = (name: string): name is Permission =>
-  (PERMISSIONS as readonly string[]).includes(name);
+type Params = Record<string, string>;
 
 export class AdminRoleController {
-  constructor(private readonly roles: AdminRoleRepository) {}
+  constructor(private readonly service: AdminRoleService) {}
 
   list: RequestHandler = async (_req, res) => {
-    const roles = await this.roles.list();
     res.set("Cache-Control", "no-store");
-    res.json({
-      data: roles.map((role) => ({
-        ...role,
-        permissions: role.permissions.filter(isCatalogPermission),
-      })),
-    });
+    res.json({ data: await this.service.list() });
+  };
+
+  create: RequestHandler<Params, unknown, CreateRoleBody> = async (req, res) => {
+    res.status(201).json(await this.service.create(req.body));
+  };
+
+  update: RequestHandler<RoleIdParams, unknown, UpdateRoleBody> = async (req, res) => {
+    res.json(await this.service.update(req.params.id, req.body));
+  };
+
+  delete: RequestHandler<RoleIdParams> = async (req, res) => {
+    await this.service.delete(req.params.id);
+    res.status(204).end();
   };
 }

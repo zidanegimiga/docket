@@ -7,6 +7,7 @@ import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import { AdminRoleController } from "./admin-roles.controller.js";
 import { PrismaAdminRoleRepository } from "./admin-roles.repository.js";
+import { AdminRoleService } from "./admin-roles.service.js";
 import { AdminUserController } from "./admin-users.controller.js";
 import { PrismaAdminUserRepository } from "./admin-users.repository.js";
 import { AdminUserService } from "./admin-users.service.js";
@@ -113,7 +114,9 @@ export function createIdentityModule({
             monitor,
           }),
         ),
-        roles: new AdminRoleController(new PrismaAdminRoleRepository(database.client)),
+        roles: new AdminRoleController(
+          new AdminRoleService(new PrismaAdminRoleRepository(database.client), monitor),
+        ),
       },
       authenticate,
     ),
