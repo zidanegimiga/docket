@@ -73,7 +73,7 @@ describe("ticket authorization", () => {
       where: { id: response.body.id },
     });
     expect(stored.createdById).toBe(user.id);
-    expect(response.body).not.toHaveProperty("createdById");
+    expect(response.body.createdById).toBe(user.id);
   });
 
   describe("updates", () => {

@@ -114,7 +114,7 @@ describe("TicketService", () => {
     it("records who created the ticket", async () => {
       const created = await service.create({ title: "Mine", priority: "low" }, member);
 
-      expect(repository.creators.get(created.id)).toBe(member.userId);
+      expect(created.createdById).toBe(member.userId);
     });
 
     it("refuses an update to someone else's ticket for a caller limited to their own", async () => {

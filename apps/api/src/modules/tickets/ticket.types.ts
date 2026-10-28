@@ -12,6 +12,7 @@ export interface TicketEntity {
   description: string | null;
   status: TicketStatus;
   priority: TicketPriority;
+  createdById: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

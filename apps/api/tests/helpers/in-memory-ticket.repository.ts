@@ -10,7 +10,6 @@ import type {
 
 export class InMemoryTicketRepository implements TicketRepository {
   readonly tickets: TicketEntity[] = [];
-  readonly creators = new Map<number, string>();
   private nextId = 1;
 
   async create(data: CreateTicketBody, createdById: string): Promise<TicketEntity> {
@@ -21,12 +20,12 @@ export class InMemoryTicketRepository implements TicketRepository {
       description: data.description ?? null,
       status: "open",
       priority: data.priority,
+      createdById,
       createdAt: now,
       updatedAt: now,
     };
 
     this.tickets.push(ticket);
-    this.creators.set(ticket.id, createdById);
     return ticket;
   }
 
@@ -46,7 +45,7 @@ export class InMemoryTicketRepository implements TicketRepository {
   ): Promise<TicketEntity | null> {
     const ticket = this.tickets.find((candidate) => candidate.id === id);
     if (!ticket) return null;
-    if (createdById && this.creators.get(id) !== createdById) return null;
+    if (createdById && ticket.createdById !== createdById) return null;
 
     Object.assign(ticket, {
       ...(data.status && { status: data.status }),

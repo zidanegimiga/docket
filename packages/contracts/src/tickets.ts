@@ -20,6 +20,8 @@ export const ticketSchema = z.object({
   description: z.string().nullable(),
   status: ticketStatusSchema,
   priority: ticketPrioritySchema,
+  /** Null for tickets created before sign-in existed, or whose creator was deleted. */
+  createdById: z.uuid().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

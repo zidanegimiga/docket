@@ -17,6 +17,7 @@ const ticketColumns = {
   description: true,
   status: true,
   priority: true,
+  createdById: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.TicketSelect;
