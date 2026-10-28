@@ -1,3 +1,5 @@
+import { inject } from "vitest";
+
 import { createContainer, type Container } from "../../src/container.js";
 import { loadEnv } from "../../src/core/config/env.js";
 import type { IdentityOverrides } from "../../src/core/identity/identity.js";
@@ -26,6 +28,18 @@ export function createTestContainer(overrides: IdentityOverrides = {}): Promise<
 }
 
 export async function resetDatabase({ database }: Container): Promise<void> {
-  await database.client.$executeRaw`TRUNCATE TABLE "tickets", "users" RESTART IDENTITY CASCADE`;
-  await database.client.role.deleteMany({ where: { isSystem: false } });
+  const db = database.client;
+  await db.$executeRaw`TRUNCATE TABLE "tickets", "users" RESTART IDENTITY CASCADE`;
+  await db.role.deleteMany({ where: { isSystem: false } });
+
+  // Undo tests that edited built-in roles, back to what the migrations granted.
+  for (const [name, permissions] of Object.entries(inject("systemRoleGrants"))) {
+    await db.role.update({
+      where: { name },
+      data: {
+        permissions: { deleteMany: {}, create: permissions.map((permission) => ({ permission })) },
+      },
+      select: { id: true },
+    });
+  }
 }
