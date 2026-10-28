@@ -38,6 +38,7 @@ export function createRouter(deps: RouterDeps): Router {
   router.use("/tickets", createTicketModule({ database, monitor, authenticate: requireUser }));
   router.use("/auth", identityModule.auth);
   router.use("/.well-known", identityModule.wellKnown);
+  router.use("/admin", identityModule.admin);
 
   return router;
 }

@@ -5,6 +5,10 @@ import type { Identity } from "../../core/identity/identity.js";
 import type { Logger } from "../../core/logger/logger.interface.js";
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
+import { AdminUserController } from "./admin-users.controller.js";
+import { PrismaAdminUserRepository } from "./admin-users.repository.js";
+import { AdminUserService } from "./admin-users.service.js";
+import { adminRoutes } from "./admin.routes.js";
 import { AuthController } from "./auth.controller.js";
 import { authRoutes } from "./auth.routes.js";
 import { AccessService } from "./access.service.js";
@@ -40,6 +44,8 @@ export interface IdentityModule {
   auth: Router;
   /** Mounted at /.well-known, for services that verify our tokens. */
   wellKnown: Router;
+  /** Mounted at /admin: managing users, roles and permissions. */
+  admin: Router;
 }
 
 export function createIdentityModule({
@@ -96,5 +102,9 @@ export function createIdentityModule({
   return {
     auth,
     wellKnown: wellKnownRoutes(new WellKnownController(identity.tokenIssuer)),
+    admin: adminRoutes(
+      new AdminUserController(new AdminUserService(new PrismaAdminUserRepository(database.client))),
+      authenticate,
+    ),
   };
 }
