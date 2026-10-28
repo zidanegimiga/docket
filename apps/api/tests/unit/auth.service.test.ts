@@ -9,6 +9,7 @@ import type {
 } from "../../src/core/identity/token.interface.js";
 import { AccessService } from "../../src/modules/identity/access.service.js";
 import { AuthService, hashRefreshToken } from "../../src/modules/identity/auth.service.js";
+import type { EmailVerifier } from "../../src/modules/identity/email-verification.service.js";
 import { ForbiddenError } from "../../src/shared/errors/forbidden.error.js";
 import { UnauthorizedError } from "../../src/shared/errors/unauthorized.error.js";
 import { InMemoryRefreshTokenRepository } from "../helpers/in-memory-refresh-token.repository.js";
@@ -50,6 +51,15 @@ class FakeTokenIssuer implements TokenIssuer {
   }
 }
 
+class FakeEmailVerifier implements EmailVerifier {
+  failWith: Error | undefined;
+
+  async createLink(userId: string): Promise<string> {
+    if (this.failWith) throw this.failWith;
+    return `https://docket.test/verify-email?token=for-${userId}`;
+  }
+}
+
 describe("AuthService", () => {
   let users: InMemoryUserRepository;
   let refreshTokens: InMemoryRefreshTokenRepository;
@@ -57,6 +67,7 @@ describe("AuthService", () => {
   let tokenIssuer: FakeTokenIssuer;
   let email: RecordingEmailSender;
   let monitor: RecordingMonitor;
+  let verifier: FakeEmailVerifier;
   let service: AuthService;
   let clock: Date;
 
@@ -68,6 +79,7 @@ describe("AuthService", () => {
     tokenIssuer = new FakeTokenIssuer();
     email = new RecordingEmailSender();
     monitor = new RecordingMonitor();
+    verifier = new FakeEmailVerifier();
     service = new AuthService({
       users,
       refreshTokens,
@@ -75,6 +87,7 @@ describe("AuthService", () => {
       passwordHasher: hasher,
       tokenIssuer,
       emailSender: email,
+      emailVerifier: verifier,
       monitor,
       refreshTokenTtlDays: 30,
       refreshReuseGraceSeconds: 30,
@@ -99,10 +112,28 @@ describe("AuthService", () => {
       expect(email.sent).toEqual([
         expect.objectContaining({
           to: jane.email,
-          subject: "Your Docket account is waiting for approval",
+          subject: "Welcome to Docket",
         }),
       ]);
       expect(monitor.metrics).toEqual([{ name: "auth.signups", value: 1, tags: {} }]);
+    });
+
+    it("includes a link to verify the email address", async () => {
+      await service.signUp(jane);
+
+      expect(email.sent[0]!.text).toContain(
+        `https://docket.test/verify-email?token=for-${users.users[0]!.id}`,
+      );
+    });
+
+    it("still welcomes the user, without a link, when the link cannot be created", async () => {
+      verifier.failWith = new Error("database unavailable");
+
+      await expect(service.signUp(jane)).resolves.toBeUndefined();
+
+      expect(email.sent).toHaveLength(1);
+      expect(email.sent[0]!.text).not.toContain("verify-email");
+      expect(monitor.exceptions).toEqual([verifier.failWith]);
     });
 
     it("does the same hashing work for an existing email, creates nothing and warns the owner", async () => {
@@ -383,9 +414,9 @@ describe("AuthService", () => {
         providers: ["google"],
       });
       expect(refreshTokens.tokens).toHaveLength(1);
-      expect(email.sent.map((message) => message.subject)).toEqual([
-        "Your Docket account is waiting for approval",
-      ]);
+      expect(email.sent.map((message) => message.subject)).toEqual(["Welcome to Docket"]);
+      // The provider already verified the address, so there is nothing to confirm.
+      expect(email.sent[0]!.text).not.toContain("verify-email");
     });
 
     it("signs a returning identity in to the same account without registering again", async () => {

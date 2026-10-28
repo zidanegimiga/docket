@@ -16,6 +16,7 @@ import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import { ForbiddenError } from "../../shared/errors/forbidden.error.js";
 import { UnauthorizedError } from "../../shared/errors/unauthorized.error.js";
 import type { AccessService } from "./access.service.js";
+import { EMAIL_VERIFICATION_TTL_HOURS, type EmailVerifier } from "./email-verification.service.js";
 import type { SessionTokens } from "./session-cookies.js";
 import type { RefreshTokenRepository } from "./session.types.js";
 import type { UserRecord, UserRepository } from "./user.types.js";
@@ -27,6 +28,7 @@ export interface AuthServiceDeps {
   passwordHasher: PasswordHasher;
   tokenIssuer: TokenIssuer;
   emailSender: EmailSender;
+  emailVerifier: EmailVerifier;
   monitor: Monitor;
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
@@ -75,7 +77,7 @@ export class AuthService {
     const user = await this.deps.users.createWithPassword({ email, name, passwordHash });
 
     if (user) {
-      await this.welcome(user);
+      await this.welcome(user, await this.verificationLinkFor(user));
     } else {
       await this.sendQuietly({
         to: email,
@@ -234,12 +236,29 @@ export class AuthService {
     return created;
   }
 
-  private async welcome(user: UserRecord): Promise<void> {
+  private async verificationLinkFor(user: UserRecord): Promise<string | undefined> {
+    try {
+      return await this.deps.emailVerifier.createLink(user.id);
+    } catch (error) {
+      // The account exists either way; a failed link should not turn the sign-up into an error.
+      this.deps.monitor.captureException(error, { context: "auth.email_verification" });
+      return undefined;
+    }
+  }
+
+  /** Welcomes a new user; a verification link is included unless the provider already verified them. */
+  private async welcome(user: UserRecord, verificationLink?: string): Promise<void> {
     this.deps.monitor.recordMetric("auth.signups", 1);
+    const approval =
+      "An administrator needs to approve your account before you can use Docket. You will be able to sign in once that happens.";
+    const verification = verificationLink
+      ? `Please confirm your email address by opening this link within ${EMAIL_VERIFICATION_TTL_HOURS} hours:\n\n${verificationLink}\n\n`
+      : "";
+
     await this.sendQuietly({
       to: user.email,
-      subject: "Your Docket account is waiting for approval",
-      text: `Hi ${user.name},\n\nThanks for signing up. An administrator needs to approve your account before you can use Docket. You will be able to sign in once that happens.`,
+      subject: "Welcome to Docket",
+      text: `Hi ${user.name},\n\nThanks for signing up. ${verification}${approval}`,
     });
   }
 

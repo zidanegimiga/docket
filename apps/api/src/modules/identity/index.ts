@@ -9,12 +9,16 @@ import { AuthController } from "./auth.controller.js";
 import { authRoutes } from "./auth.routes.js";
 import { AccessService } from "./access.service.js";
 import { AuthService } from "./auth.service.js";
+import { EmailVerificationController } from "./email-verification.controller.js";
+import { emailVerificationRoutes } from "./email-verification.routes.js";
+import { EmailVerificationService } from "./email-verification.service.js";
 import { OAuthController } from "./oauth.controller.js";
 import { oauthRoutes } from "./oauth.routes.js";
 import { OAuthService } from "./oauth.service.js";
 import type { SessionCookieSettings } from "./session-cookies.js";
 import { PrismaRefreshTokenRepository } from "./session.repository.js";
 import { PrismaUserRepository } from "./user.repository.js";
+import { PrismaVerificationTokenRepository } from "./verification.repository.js";
 import { WellKnownController } from "./well-known.controller.js";
 import { wellKnownRoutes } from "./well-known.routes.js";
 
@@ -50,6 +54,11 @@ export function createIdentityModule({
   authenticate,
 }: IdentityModuleDeps): IdentityModule {
   const users = new PrismaUserRepository(database.client);
+  const emailVerification = new EmailVerificationService({
+    tokens: new PrismaVerificationTokenRepository(database.client),
+    monitor,
+    linkFor: (token) => `${webOrigin}${cookies.apiPrefix}/auth/verify-email?token=${token}`,
+  });
   const authService = new AuthService({
     users,
     refreshTokens: new PrismaRefreshTokenRepository(database.client),
@@ -57,6 +66,7 @@ export function createIdentityModule({
     passwordHasher: identity.passwordHasher,
     tokenIssuer: identity.tokenIssuer,
     emailSender: identity.emailSender,
+    emailVerifier: emailVerification,
     monitor,
     refreshTokenTtlDays,
     refreshReuseGraceSeconds,
@@ -77,6 +87,10 @@ export function createIdentityModule({
   auth.use(
     "/oauth",
     oauthRoutes(new OAuthController(oauthService, monitor, { cookies, webOrigin })),
+  );
+  auth.use(
+    "/verify-email",
+    emailVerificationRoutes(new EmailVerificationController(emailVerification, webOrigin)),
   );
 
   return {

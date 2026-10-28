@@ -38,9 +38,7 @@ describe("POST /auth/signup", () => {
     expect(stored).toMatchObject({ name: "Jane Doe", status: "pending" });
     expect(stored.passwordHash).toMatch(/^\$argon2id\$/);
     expect(stored.passwordHash).not.toContain(jane.password);
-    expect(email.sent.map((message) => message.subject)).toEqual([
-      "Your Docket account is waiting for approval",
-    ]);
+    expect(email.sent.map((message) => message.subject)).toEqual(["Welcome to Docket"]);
   });
 
   it("answers an already registered email exactly like a new one", async () => {
@@ -55,7 +53,7 @@ describe("POST /auth/signup", () => {
     expect(second.body).toEqual(first.body);
     await expect(container.database.client.user.count()).resolves.toBe(1);
     expect(email.sent.map((message) => message.subject)).toEqual([
-      "Your Docket account is waiting for approval",
+      "Welcome to Docket",
       "Someone tried to sign up with your email",
     ]);
   });
