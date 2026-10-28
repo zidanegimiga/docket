@@ -357,6 +357,101 @@ describe("AuthService", () => {
     });
   });
 
+  describe("signInWithIdentity", () => {
+    const google = {
+      provider: "google",
+      subject: "google-42",
+      email: "jane@example.com",
+      emailVerified: true,
+      name: "Jane Doe",
+    };
+
+    it("registers a new identity as a pending user and starts a session", async () => {
+      const result = await service.signInWithIdentity(google, client);
+
+      expect(users.users).toHaveLength(1);
+      expect(users.users[0]).toMatchObject({
+        email: "jane@example.com",
+        name: "Jane Doe",
+        status: "pending",
+        passwordHash: null,
+        emailVerifiedAt: expect.any(Date),
+      });
+      expect(result.user).toMatchObject({
+        status: "pending",
+        permissions: [],
+        providers: ["google"],
+      });
+      expect(refreshTokens.tokens).toHaveLength(1);
+      expect(email.sent.map((message) => message.subject)).toEqual([
+        "Your Docket account is waiting for approval",
+      ]);
+    });
+
+    it("signs a returning identity in to the same account without registering again", async () => {
+      const first = await service.signInWithIdentity(google, client);
+      email.sent.length = 0;
+
+      const second = await service.signInWithIdentity({ ...google, name: "Renamed" }, client);
+
+      expect(second.user.id).toBe(first.user.id);
+      expect(users.users).toHaveLength(1);
+      expect(email.sent).toEqual([]);
+    });
+
+    it("links to an existing account when both sides have verified the email", async () => {
+      await service.signUp(jane);
+      const existing = users.users[0]!;
+      existing.emailVerifiedAt = new Date();
+
+      const result = await service.signInWithIdentity(google, client);
+
+      expect(result.user).toMatchObject({
+        id: existing.id,
+        providers: ["google"],
+        hasPassword: true,
+      });
+      expect(users.users).toHaveLength(1);
+    });
+
+    it("refuses to link to an account whose email was never verified", async () => {
+      await service.signUp(jane);
+
+      await expect(service.signInWithIdentity(google, client)).rejects.toMatchObject({
+        statusCode: 403,
+        code: "OAUTH_ACCOUNT_EXISTS",
+      });
+      expect(users.identities).toEqual([]);
+    });
+
+    it.each([
+      { label: "an unverified email", identity: { ...google, emailVerified: false } },
+      { label: "no email", identity: { ...google, email: null } },
+    ])("refuses an identity with $label", async ({ identity }) => {
+      await expect(service.signInWithIdentity(identity, client)).rejects.toMatchObject({
+        code: "OAUTH_EMAIL_UNVERIFIED",
+      });
+      expect(users.users).toEqual([]);
+    });
+
+    it("refuses a disabled account without starting a session", async () => {
+      await service.signInWithIdentity(google, client);
+      users.users[0]!.status = "disabled";
+      refreshTokens.tokens.length = 0;
+
+      await expect(service.signInWithIdentity(google, client)).rejects.toMatchObject({
+        code: "ACCOUNT_DISABLED",
+      });
+      expect(refreshTokens.tokens).toEqual([]);
+    });
+
+    it("falls back to the email's local part when the provider gives no name", async () => {
+      await service.signInWithIdentity({ ...google, name: "  " }, client);
+
+      expect(users.users[0]!.name).toBe("jane");
+    });
+  });
+
   describe("currentUser", () => {
     it("reports what the access token grants, not what changed since it was issued", async () => {
       await service.signUp(jane);
