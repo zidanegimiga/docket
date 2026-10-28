@@ -3,6 +3,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+import "@/shared/config/zod";
 import { getQueryClient } from "@/shared/query/query-client";
 
 interface ProvidersProps {
