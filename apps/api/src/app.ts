@@ -6,6 +6,7 @@ import { errorHandler } from "./shared/middleware/error-handler.middleware.js";
 import { notFound } from "./shared/middleware/not-found.middleware.js";
 import { requestContext } from "./shared/middleware/request-context.middleware.js";
 import { requestLogger } from "./shared/middleware/request-logger.middleware.js";
+import { securityHeaders } from "./shared/middleware/security-headers.middleware.js";
 
 export interface AppDeps {
   logger: Logger;
@@ -19,6 +20,7 @@ export function createApp({ logger, monitor, router }: AppDeps): Express {
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
 
+  app.use(securityHeaders());
   app.use(requestContext(logger));
   app.use(requestLogger(monitor));
   app.use(express.json({ limit: "64kb" }));
