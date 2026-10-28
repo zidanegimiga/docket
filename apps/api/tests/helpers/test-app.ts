@@ -1,5 +1,6 @@
 import { createContainer, type Container } from "../../src/container.js";
 import { loadEnv } from "../../src/core/config/env.js";
+import type { IdentityOverrides } from "../../src/core/identity/identity.js";
 import { generateSigningKeyJwk } from "../../src/core/identity/signing-key.js";
 
 export const TEST_DATABASE_URL =
@@ -7,7 +8,7 @@ export const TEST_DATABASE_URL =
 
 const testSigningKey = await generateSigningKeyJwk();
 
-export function createTestContainer(): Promise<Container> {
+export function createTestContainer(overrides: IdentityOverrides = {}): Promise<Container> {
   return createContainer(
     loadEnv({
       NODE_ENV: "test",
@@ -15,6 +16,7 @@ export function createTestContainer(): Promise<Container> {
       DATABASE_URL: TEST_DATABASE_URL,
       AUTH_PRIVATE_KEY: testSigningKey,
     }),
+    overrides,
   );
 }
 

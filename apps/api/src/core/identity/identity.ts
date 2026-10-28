@@ -38,7 +38,13 @@ function oauthProvidersFrom(env: Env): OAuthProvider[] {
   return providers;
 }
 
-export async function createIdentity(env: Env, logger: Logger): Promise<Identity> {
+export type IdentityOverrides = Partial<Pick<Identity, "emailSender">>;
+
+export async function createIdentity(
+  env: Env,
+  logger: Logger,
+  overrides: IdentityOverrides = {},
+): Promise<Identity> {
   let serializedKey = env.AUTH_PRIVATE_KEY;
   if (!serializedKey) {
     logger.warn("No AUTH_PRIVATE_KEY set; using a temporary signing key until restart");
@@ -52,7 +58,9 @@ export async function createIdentity(env: Env, logger: Logger): Promise<Identity
     accessTokenTtlSeconds: env.ACCESS_TOKEN_TTL_SECONDS,
   });
 
-  if (env.NODE_ENV === "production") {
+  const emailSender =
+    overrides.emailSender ?? new LoggerEmailSender(logger.child({ component: "email" }));
+  if (env.NODE_ENV === "production" && !overrides.emailSender) {
     logger.warn("Emails are written to the log instead of being delivered");
   }
 
@@ -66,6 +74,6 @@ export async function createIdentity(env: Env, logger: Logger): Promise<Identity
     tokenIssuer,
     tokenVerifier: JoseTokenVerifier.fromKeySet(tokenIssuer.publicKeys(), tokenSettings),
     oauthProviders,
-    emailSender: new LoggerEmailSender(logger.child({ component: "email" })),
+    emailSender,
   };
 }
