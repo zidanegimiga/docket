@@ -11,7 +11,7 @@ const tokens = {
 
 describe("sessionCookies", () => {
   it("uses __Host- and __Secure- prefixed, Secure cookies over HTTPS behind the /api prefix", () => {
-    const [access, refresh] = sessionCookies(tokens, { secure: true, apiPrefix: "/api" });
+    const [access, refresh, hint] = sessionCookies(tokens, { secure: true, apiPrefix: "/api" });
 
     expect(access).toMatchObject({
       name: "__Host-docket_access",
@@ -21,6 +21,11 @@ describe("sessionCookies", () => {
     expect(refresh).toMatchObject({
       name: "__Secure-docket_refresh",
       options: { secure: true, httpOnly: true, sameSite: "lax", path: "/api/auth" },
+    });
+    expect(hint).toMatchObject({
+      name: "__Host-docket_session",
+      value: "1",
+      options: { secure: true, httpOnly: false, path: "/", expires: tokens.refreshTokenExpiresAt },
     });
   });
 

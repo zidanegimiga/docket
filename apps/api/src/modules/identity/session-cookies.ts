@@ -23,6 +23,7 @@ export function sessionCookieNames(secure: boolean) {
   return {
     access: secure ? "__Host-docket_access" : "docket_access",
     refresh: secure ? "__Secure-docket_refresh" : "docket_refresh",
+    hint: secure ? "__Host-docket_session" : "docket_session",
   };
 }
 
@@ -43,6 +44,13 @@ export function sessionCookies(
       name: names.refresh,
       value: tokens.refreshToken,
       options: { ...base, path: `${apiPrefix}/auth`, expires: tokens.refreshTokenExpiresAt },
+    },
+    {
+      // Says a session exists, nothing more. Page requests never carry the refresh cookie, so the
+      // web app uses this to tell a lapsed access token from a visitor who never signed in.
+      name: names.hint,
+      value: "1",
+      options: { ...base, httpOnly: false, path: "/", expires: tokens.refreshTokenExpiresAt },
     },
   ];
 }

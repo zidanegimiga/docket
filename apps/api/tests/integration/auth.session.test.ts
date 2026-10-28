@@ -95,7 +95,7 @@ describe("session refresh and logout", () => {
     const cleared = (logout.headers["set-cookie"] as unknown as string[]).map(
       (line) => line.split("=")[0],
     );
-    expect(cleared).toEqual(["docket_access", "docket_refresh"]);
+    expect(cleared).toEqual(["docket_access", "docket_refresh", "docket_session"]);
     expect(afterwards.status).toBe(401);
     await expect(
       container.database.client.refreshToken.count({ where: { revokedAt: null } }),

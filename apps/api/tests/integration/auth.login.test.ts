@@ -69,7 +69,11 @@ describe("POST /auth/login", () => {
     });
 
     const cookies = parseSetCookies(response.headers["set-cookie"]);
-    expect(cookies.map((cookie) => cookie.name)).toEqual(["docket_access", "docket_refresh"]);
+    expect(cookies.map((cookie) => cookie.name)).toEqual([
+      "docket_access",
+      "docket_refresh",
+      "docket_session",
+    ]);
     const [access, refresh] = cookies;
     expect(access!.attributes).toMatchObject({ path: "/", httponly: true, samesite: "Lax" });
     expect(refresh!.attributes).toMatchObject({ path: "/auth", httponly: true, samesite: "Lax" });

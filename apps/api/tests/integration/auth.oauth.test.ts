@@ -88,7 +88,12 @@ describe("OAuth sign-in", () => {
 
     expect(response.status).toBe(303);
     expect(response.headers["location"]).toBe(`${TEST_WEB_ORIGIN}/tickets?status=open`);
-    expect(cookieNames(response)).toEqual(["docket_oauth", "docket_access", "docket_refresh"]);
+    expect(cookieNames(response)).toEqual([
+      "docket_oauth",
+      "docket_access",
+      "docket_refresh",
+      "docket_session",
+    ]);
 
     const me = await agent.get("/auth/me");
     expect(me.body.user).toMatchObject({
