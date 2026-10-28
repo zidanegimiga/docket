@@ -9,6 +9,7 @@ import type { OAuthProvider } from "./oauth/oauth-provider.interface.js";
 import { OAuthProviderRegistry } from "./oauth/oauth-provider.registry.js";
 import { OidcProvider } from "./oauth/oidc.provider.js";
 import type { PasswordHasher } from "./password-hasher.interface.js";
+import { type PrincipalResolver, TokenPrincipalResolver } from "./principal.js";
 import { generateSigningKeyJwk, loadSigningKey } from "./signing-key.js";
 import type { TokenIssuer, TokenVerifier } from "./token.interface.js";
 
@@ -16,6 +17,7 @@ export interface Identity {
   passwordHasher: PasswordHasher;
   tokenIssuer: TokenIssuer;
   tokenVerifier: TokenVerifier;
+  principalResolver: PrincipalResolver;
   oauthProviders: OAuthProviderRegistry;
   emailSender: EmailSender;
 }
@@ -38,7 +40,7 @@ function oauthProvidersFrom(env: Env): OAuthProvider[] {
   return providers;
 }
 
-export type IdentityOverrides = Partial<Pick<Identity, "emailSender">>;
+export type IdentityOverrides = Partial<Pick<Identity, "emailSender" | "oauthProviders">>;
 
 export async function createIdentity(
   env: Env,
@@ -64,15 +66,19 @@ export async function createIdentity(
     logger.warn("Emails are written to the log instead of being delivered");
   }
 
-  const oauthProviders = new OAuthProviderRegistry(oauthProvidersFrom(env));
+  const oauthProviders =
+    overrides.oauthProviders ?? new OAuthProviderRegistry(oauthProvidersFrom(env));
   logger.info("Sign-in providers configured", {
     providers: ["password", ...oauthProviders.list().map((provider) => provider.id)],
   });
 
+  const tokenVerifier = JoseTokenVerifier.fromKeySet(tokenIssuer.publicKeys(), tokenSettings);
+
   return {
     passwordHasher: new Argon2PasswordHasher(),
     tokenIssuer,
-    tokenVerifier: JoseTokenVerifier.fromKeySet(tokenIssuer.publicKeys(), tokenSettings),
+    tokenVerifier,
+    principalResolver: new TokenPrincipalResolver(tokenVerifier),
     oauthProviders,
     emailSender,
   };
