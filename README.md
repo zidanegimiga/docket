@@ -88,6 +88,7 @@ docket/
 | [Web](apps/web/README.md)                 | Rendering and hydration, state, data fetching, optimistic updates, styling, accessibility, web tests |
 | [Contracts](packages/contracts/README.md) | Shared schemas and the rules for writing them                                                        |
 | [Infrastructure](docs/infrastructure.md)  | Turborepo, CI, Docker images, deployment                                                             |
+| [Authentication](docs/authentication.md)  | Sign-in, tokens, roles and permissions, and the path to a separate user service                      |
 | [Guides](docs/guides/)                    | Step-by-step patterns for extending the project                                                      |
 
 ## Decisions and tradeoffs
