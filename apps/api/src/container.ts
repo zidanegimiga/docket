@@ -36,7 +36,17 @@ export async function createContainer(
   const app = createApp({
     logger,
     monitor,
-    router: createRouter({ database, monitor, identity, logger }),
+    router: createRouter({
+      database,
+      monitor,
+      identity,
+      logger,
+      cookies: {
+        secure: new URL(env.WEB_ORIGIN).protocol === "https:",
+        apiPrefix: env.PUBLIC_API_PREFIX,
+      },
+      refreshTokenTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
+    }),
     trustProxyHops: env.TRUST_PROXY_HOPS,
   });
 

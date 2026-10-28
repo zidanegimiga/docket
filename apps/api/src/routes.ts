@@ -7,6 +7,7 @@ import type { Monitor } from "./core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
 import { createHealthModule } from "./modules/health/index.js";
 import { createIdentityModule } from "./modules/identity/index.js";
+import type { SessionCookieSettings } from "./modules/identity/session-cookies.js";
 import { createTicketModule } from "./modules/tickets/index.js";
 
 export interface RouterDeps {
@@ -14,14 +15,17 @@ export interface RouterDeps {
   monitor: Monitor;
   identity: Identity;
   logger: Logger;
+  cookies: SessionCookieSettings;
+  refreshTokenTtlDays: number;
 }
 
-export function createRouter({ database, monitor, identity, logger }: RouterDeps): Router {
+export function createRouter(deps: RouterDeps): Router {
+  const { database, monitor } = deps;
   const router = Router();
 
   router.use("/health", createHealthModule({ database }));
   router.use("/tickets", createTicketModule({ database, monitor }));
-  router.use("/auth", createIdentityModule({ database, monitor, identity, logger }));
+  router.use("/auth", createIdentityModule(deps));
 
   return router;
 }

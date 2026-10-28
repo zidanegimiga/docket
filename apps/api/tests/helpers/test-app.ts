@@ -15,6 +15,7 @@ export function createTestContainer(overrides: IdentityOverrides = {}): Promise<
       LOG_LEVEL: "silent",
       DATABASE_URL: TEST_DATABASE_URL,
       AUTH_PRIVATE_KEY: testSigningKey,
+      PUBLIC_API_PREFIX: "",
     }),
     overrides,
   );

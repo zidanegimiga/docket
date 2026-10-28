@@ -1,4 +1,4 @@
-import { signUpSchema } from "@docket/contracts";
+import { logInSchema, signUpSchema } from "@docket/contracts";
 import { Router } from "express";
 
 import { validate } from "../../shared/middleware/validate.middleware.js";
@@ -8,6 +8,7 @@ export function authRoutes(controller: AuthController): Router {
   const router = Router();
 
   router.post("/signup", validate({ body: signUpSchema }), controller.signUp);
+  router.post("/login", validate({ body: logInSchema }), controller.logIn);
 
   return router;
 }

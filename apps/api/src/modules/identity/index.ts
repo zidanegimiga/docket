@@ -7,7 +7,10 @@ import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import { AuthController } from "./auth.controller.js";
 import { authRoutes } from "./auth.routes.js";
+import { AccessService } from "./access.service.js";
 import { AuthService } from "./auth.service.js";
+import type { SessionCookieSettings } from "./session-cookies.js";
+import { PrismaRefreshTokenRepository } from "./session.repository.js";
 import { PrismaUserRepository } from "./user.repository.js";
 
 export interface IdentityModuleDeps {
@@ -15,16 +18,29 @@ export interface IdentityModuleDeps {
   monitor: Monitor;
   identity: Identity;
   logger: Logger;
+  cookies: SessionCookieSettings;
+  refreshTokenTtlDays: number;
 }
 
-export function createIdentityModule({ database, monitor, identity }: IdentityModuleDeps): Router {
+export function createIdentityModule({
+  database,
+  monitor,
+  identity,
+  logger,
+  cookies,
+  refreshTokenTtlDays,
+}: IdentityModuleDeps): Router {
   const users = new PrismaUserRepository(database.client);
-  const authService = new AuthService(
+  const authService = new AuthService({
     users,
-    identity.passwordHasher,
-    identity.emailSender,
+    refreshTokens: new PrismaRefreshTokenRepository(database.client),
+    access: new AccessService(users, logger),
+    passwordHasher: identity.passwordHasher,
+    tokenIssuer: identity.tokenIssuer,
+    emailSender: identity.emailSender,
     monitor,
-  );
+    refreshTokenTtlDays,
+  });
 
-  return authRoutes(new AuthController(authService));
+  return authRoutes(new AuthController(authService, cookies));
 }

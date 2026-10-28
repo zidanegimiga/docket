@@ -18,6 +18,10 @@ const envSchema = z
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
 
     WEB_ORIGIN: httpUrl.transform((url) => new URL(url).origin).default("http://localhost:3000"),
+    PUBLIC_API_PREFIX: z
+      .string()
+      .regex(/^(\/[a-z0-9-]+)*$/, "must be empty or a path like /api")
+      .default("/api"),
     AUTH_PRIVATE_KEY: optionalSecret,
     AUTH_ALLOW_EPHEMERAL_KEY: z.stringbool().default(false),
     AUTH_ISSUER: httpUrl.default("http://localhost:4000"),
