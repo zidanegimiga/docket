@@ -49,6 +49,7 @@ export async function createContainer(
       refreshReuseGraceSeconds: env.REFRESH_REUSE_GRACE_SECONDS,
     }),
     trustProxyHops: env.TRUST_PROXY_HOPS,
+    allowedOrigins: [env.WEB_ORIGIN],
   });
 
   return { env, logger, monitor, database, identity, app };

@@ -6,6 +6,8 @@ import { generateSigningKeyJwk } from "../../src/core/identity/signing-key.js";
 export const TEST_DATABASE_URL =
   process.env["TEST_DATABASE_URL"] ?? "postgresql://tickets:tickets@localhost:5432/docket_test";
 
+export const TEST_WEB_ORIGIN = "http://localhost:3000";
+
 const testSigningKey = await generateSigningKeyJwk();
 
 export function createTestContainer(overrides: IdentityOverrides = {}): Promise<Container> {
@@ -14,6 +16,7 @@ export function createTestContainer(overrides: IdentityOverrides = {}): Promise<
       NODE_ENV: "test",
       LOG_LEVEL: "silent",
       DATABASE_URL: TEST_DATABASE_URL,
+      WEB_ORIGIN: TEST_WEB_ORIGIN,
       AUTH_PRIVATE_KEY: testSigningKey,
       PUBLIC_API_PREFIX: "",
       REFRESH_REUSE_GRACE_SECONDS: "0",

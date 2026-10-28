@@ -5,6 +5,7 @@ import type { Logger } from "./core/logger/logger.interface.js";
 import type { Monitor } from "./core/monitoring/monitor.interface.js";
 import { errorHandler } from "./shared/middleware/error-handler.middleware.js";
 import { notFound } from "./shared/middleware/not-found.middleware.js";
+import { originCheck } from "./shared/middleware/origin-check.middleware.js";
 import { requestContext } from "./shared/middleware/request-context.middleware.js";
 import { requestLogger } from "./shared/middleware/request-logger.middleware.js";
 import { securityHeaders } from "./shared/middleware/security-headers.middleware.js";
@@ -14,9 +15,16 @@ export interface AppDeps {
   monitor: Monitor;
   router: Router;
   trustProxyHops: number;
+  allowedOrigins: readonly string[];
 }
 
-export function createApp({ logger, monitor, router, trustProxyHops }: AppDeps): Express {
+export function createApp({
+  logger,
+  monitor,
+  router,
+  trustProxyHops,
+  allowedOrigins,
+}: AppDeps): Express {
   const app = express();
 
   app.disable("x-powered-by");
@@ -25,6 +33,7 @@ export function createApp({ logger, monitor, router, trustProxyHops }: AppDeps):
   app.use(securityHeaders());
   app.use(requestContext(logger));
   app.use(requestLogger(monitor));
+  app.use(originCheck({ allowedOrigins }));
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
 

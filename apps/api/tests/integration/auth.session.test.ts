@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Container } from "../../src/container.js";
 import { seedUser } from "../helpers/seed-users.js";
-import { createTestContainer, resetDatabase } from "../helpers/test-app.js";
+import { createTestContainer, resetDatabase, TEST_WEB_ORIGIN } from "../helpers/test-app.js";
 
 const cookieValue = (response: request.Response, name: string) => {
   const header = response.headers["set-cookie"] as unknown as string[] | undefined;
@@ -34,7 +34,8 @@ describe("session refresh and logout", () => {
       password,
       roles: ["member"],
     });
-    const agent = request.agent(container.app);
+    // The Origin header makes the agent look like the web app, as the CSRF check expects.
+    const agent = request.agent(container.app).set("Origin", TEST_WEB_ORIGIN);
     const login = await agent.post("/auth/login").send({ email: "jane@example.com", password });
     return { user, agent, refreshToken: cookieValue(login, "docket_refresh")! };
   };
@@ -62,6 +63,7 @@ describe("session refresh and logout", () => {
 
     const replay = await request(container.app)
       .post("/auth/refresh")
+      .set("Origin", TEST_WEB_ORIGIN)
       .set("Cookie", `docket_refresh=${refreshToken}`);
     const legitimate = await agent.post("/auth/refresh");
 
