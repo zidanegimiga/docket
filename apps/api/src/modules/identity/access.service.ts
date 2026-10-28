@@ -1,12 +1,34 @@
 import { PERMISSIONS, type Permission, type UserStatus } from "@docket/contracts";
 
 import type { Logger } from "../../core/logger/logger.interface.js";
-import type { UserRepository } from "./user.types.js";
+import type { UserAccess, UserRepository } from "./user.types.js";
 
 export interface ResolvedAccess {
   userId: string;
   status: UserStatus;
   permissions: Permission[];
+}
+
+export interface EffectivePermissions {
+  permissions: Permission[];
+  /** Stored names missing from the catalog, such as a permission removed from the code. */
+  unknown: string[];
+}
+
+/**
+ * The permissions a user actually holds: the union of their roles and direct grants, in catalog
+ * order, and none at all unless the account is active.
+ */
+export function effectivePermissions({
+  status,
+  rolePermissions,
+  directPermissions,
+}: UserAccess): EffectivePermissions {
+  const granted = new Set([...rolePermissions, ...directPermissions]);
+  const unknown = [...granted].filter((name) => !(PERMISSIONS as readonly string[]).includes(name));
+  const permissions =
+    status === "active" ? PERMISSIONS.filter((permission) => granted.has(permission)) : [];
+  return { permissions, unknown };
 }
 
 export class AccessService {
@@ -19,17 +41,8 @@ export class AccessService {
     const access = await this.users.findAccess(userId);
     if (!access) return null;
 
-    if (access.status !== "active") {
-      return { userId, status: access.status, permissions: [] };
-    }
-
-    const granted = new Set([...access.rolePermissions, ...access.directPermissions]);
-    const permissions = PERMISSIONS.filter((permission) => granted.has(permission));
-
-    const unknown = [...granted].filter(
-      (name) => !(PERMISSIONS as readonly string[]).includes(name),
-    );
-    if (unknown.length > 0) {
+    const { permissions, unknown } = effectivePermissions(access);
+    if (access.status === "active" && unknown.length > 0) {
       this.logger.warn("Ignoring stored permissions that are not in the catalog", {
         userId,
         unknown,
