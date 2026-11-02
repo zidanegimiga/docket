@@ -1,5 +1,6 @@
 import {
   createRoleSchema,
+  listAuditQuerySchema,
   listUsersQuerySchema,
   updateRoleSchema,
   updateUserSchema,
@@ -11,15 +12,17 @@ import { validate } from "../../shared/middleware/validate.middleware.js";
 import type { AdminRoleController } from "./admin-roles.controller.js";
 import { roleIdParamsSchema } from "./admin-roles.schemas.js";
 import type { AdminUserController } from "./admin-users.controller.js";
+import type { AuditLogController } from "./audit.controller.js";
 import { userIdParamsSchema } from "./admin-users.schemas.js";
 
 export interface AdminControllers {
   users: AdminUserController;
   roles: AdminRoleController;
+  audit: AuditLogController;
 }
 
 export function adminRoutes(
-  { users, roles }: AdminControllers,
+  { users, roles, audit }: AdminControllers,
   authenticate: RequestHandler,
 ): Router {
   const router = Router();
@@ -58,6 +61,13 @@ export function adminRoutes(
     requirePermission("roles:manage"),
     validate({ params: roleIdParamsSchema }),
     roles.delete,
+  );
+
+  router.get(
+    "/audit",
+    requirePermission("audit:read"),
+    validate({ query: listAuditQuerySchema }),
+    audit.list,
   );
 
   return router;

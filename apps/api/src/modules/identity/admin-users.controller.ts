@@ -16,7 +16,7 @@ export class AdminUserController {
   };
 
   update: RequestHandler<UserIdParams, unknown, UpdateUserBody> = async (req, res) => {
-    const user = await this.service.update(req.params.id, req.body, principalOf(req));
+    const user = await this.service.update(req.params.id, req.body, principalOf(req), req.id);
     res.set("Cache-Control", "no-store");
     res.json(user);
   };

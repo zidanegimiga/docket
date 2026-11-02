@@ -1,6 +1,7 @@
 import type { UserStatus } from "@docket/contracts";
 
 import type { PrismaClient } from "../../generated/prisma/client.js";
+import { recordAuditEvents } from "./audit.repository.js";
 
 export const ADMIN_ROLE = "admin";
 
@@ -36,6 +37,21 @@ export function promoteToAdmin(db: PrismaClient, email: string): Promise<AdminPr
         data: { status: "active" },
         select: { id: true },
       });
+    }
+
+    if (!existing || user.status !== "active") {
+      // Recorded without an actor: whoever ran the command had database access, not an account.
+      await recordAuditEvents(tx, [
+        {
+          action: "user.promoted",
+          changes: {},
+          actorId: null,
+          requestId: null,
+          targetType: "user",
+          targetId: user.id,
+          targetLabel: email,
+        },
+      ]);
     }
 
     return {

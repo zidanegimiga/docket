@@ -38,7 +38,8 @@ export function createTestContainer(
 
 export async function resetDatabase({ database }: Container): Promise<void> {
   const db = database.client;
-  await db.$executeRaw`TRUNCATE TABLE "tickets", "users" RESTART IDENTITY CASCADE`;
+  // audit_events has no foreign keys, so it is listed rather than reached by CASCADE.
+  await db.$executeRaw`TRUNCATE TABLE "tickets", "users", "audit_events" RESTART IDENTITY CASCADE`;
   await db.role.deleteMany({ where: { isSystem: false } });
 
   // Undo tests that edited built-in roles, back to what the migrations granted.

@@ -8,8 +8,14 @@ import {
 import type { Monitor } from "../../core/monitoring/monitor.interface.js";
 import { ConflictError } from "../../shared/errors/conflict.error.js";
 import { NotFoundError } from "../../shared/errors/not-found.error.js";
+import {
+  describeRoleCreated,
+  describeRoleDeleted,
+  describeRoleUpdated,
+} from "./admin-roles.audit.js";
 import { assertRoleDeletable, assertRoleUpdateAllowed } from "./admin-roles.policy.js";
 import type { AdminRoleEntity, AdminRoleRecord, AdminRoleRepository } from "./admin-roles.types.js";
+import type { AuditContext } from "./audit.types.js";
 
 const isCatalogPermission = (name: string): name is Permission =>
   (PERMISSIONS as readonly string[]).includes(name);
@@ -33,30 +39,37 @@ export class AdminRoleService {
     return (await this.roles.list()).map(toEntity);
   }
 
-  async create(role: CreateRoleBody): Promise<AdminRoleEntity> {
-    const created = await this.roles.create(role);
+  async create(role: CreateRoleBody, context: AuditContext): Promise<AdminRoleEntity> {
+    const created = await this.roles.create(role, (record) => [
+      describeRoleCreated(record, context),
+    ]);
     if (!created) throw nameTaken(role.name);
     this.monitor.recordMetric("admin.role_changes", 1, { action: "create" });
     return toEntity(created);
   }
 
-  async update(id: string, change: UpdateRoleBody): Promise<AdminRoleEntity> {
+  async update(
+    id: string,
+    change: UpdateRoleBody,
+    context: AuditContext,
+  ): Promise<AdminRoleEntity> {
     const role = await this.roles.findById(id);
     if (!role) throw new NotFoundError("Role", id);
     assertRoleUpdateAllowed(role, change);
 
-    const updated = await this.roles.update(id, change);
+    const event = describeRoleUpdated(role, change, context);
+    const updated = await this.roles.update(id, change, event ? [event] : []);
     if (!updated) throw nameTaken(change.name ?? role.name);
     this.monitor.recordMetric("admin.role_changes", 1, { action: "update" });
     return toEntity(updated);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, context: AuditContext): Promise<void> {
     const role = await this.roles.findById(id);
     if (!role) throw new NotFoundError("Role", id);
     assertRoleDeletable(role);
 
-    const outcome = await this.roles.delete(id);
+    const outcome = await this.roles.delete(id, [describeRoleDeleted(role, context)]);
     if (outcome === "not_found") throw new NotFoundError("Role", id);
     if (outcome === "refused") {
       // Someone was given the role between the check and the delete.

@@ -1,5 +1,7 @@
 import type { ListUsersQuery, Permission, UpdateUserBody, UserStatus } from "@docket/contracts";
 
+import type { NewAuditEvent } from "./audit.types.js";
+
 /** A user as administrators see them. Never carries the password hash itself. */
 export interface AdminUserRecord {
   id: string;
@@ -32,7 +34,7 @@ export type AdminRole = AdminUserRecord["roles"][number];
 
 /** Everything a rule needs to judge an access change before it is written. */
 export interface AccessChangeSnapshot {
-  before: Pick<AdminUserRecord, "id" | "status" | "roles" | "directPermissions">;
+  before: Pick<AdminUserRecord, "id" | "email" | "status" | "roles" | "directPermissions">;
   after: { status: UserStatus; roles: AdminRole[]; directPermissions: string[] };
   /** Requested role ids that do not exist. */
   unknownRoleIds: string[];
@@ -43,13 +45,14 @@ export interface AccessChangeSnapshot {
 export interface AdminUserRepository {
   list(query: ListUsersQuery): Promise<{ items: AdminUserRecord[]; total: number }>;
   /**
-   * Applies an access change atomically. `check` sees the state before and after and throws to
-   * refuse; changes to administrators are serialised so concurrent edits cannot both pass it.
-   * Disabling a user revokes their refresh tokens in the same transaction. Null if no such user.
+   * Applies an access change atomically. `decide` sees the state before and after, throws to
+   * refuse, and returns the audit entries to record with the change; changes to administrators are
+   * serialised so concurrent edits cannot both pass it. Disabling a user revokes their refresh
+   * tokens in the same transaction. Null if no such user.
    */
   updateAccess(
     id: string,
     change: UpdateUserBody,
-    check: (snapshot: AccessChangeSnapshot) => void,
+    decide: (snapshot: AccessChangeSnapshot) => NewAuditEvent[],
   ): Promise<AdminUserRecord | null>;
 }

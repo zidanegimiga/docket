@@ -12,6 +12,7 @@ import { NotFoundError } from "../../shared/errors/not-found.error.js";
 
 import { paginate, type Paginated } from "../../shared/http/pagination.js";
 import { effectivePermissions } from "./access.service.js";
+import { describeAccessChange } from "./admin-users.audit.js";
 import { assertAccessChangeAllowed } from "./admin-users.policy.js";
 import type { AdminUserEntity, AdminUserRecord, AdminUserRepository } from "./admin-users.types.js";
 
@@ -36,11 +37,17 @@ export class AdminUserService {
    * Approves, disables or re-enables a user and replaces their roles or direct grants. Changes
    * reach the user's session at its next refresh; disabling ends their sessions at once.
    */
-  async update(id: string, change: UpdateUserBody, actor: Principal): Promise<AdminUserEntity> {
+  async update(
+    id: string,
+    change: UpdateUserBody,
+    actor: Principal,
+    requestId: string | null = null,
+  ): Promise<AdminUserEntity> {
     let previousStatus: AdminUserRecord["status"] | undefined;
     const updated = await this.deps.users.updateAccess(id, change, (snapshot) => {
       assertAccessChangeAllowed(actor, snapshot);
       previousStatus = snapshot.before.status;
+      return describeAccessChange(snapshot, { actorId: actor.userId, requestId });
     });
     if (!updated) throw new NotFoundError("User", id);
 

@@ -15,6 +15,9 @@ import { adminRoutes } from "./admin.routes.js";
 import { AuthController } from "./auth.controller.js";
 import { authRoutes } from "./auth.routes.js";
 import { AccessService } from "./access.service.js";
+import { AuditLogController } from "./audit.controller.js";
+import { PrismaAuditLogRepository } from "./audit.repository.js";
+import { AuditLogService } from "./audit.service.js";
 import { AuthService } from "./auth.service.js";
 import { EmailVerificationController } from "./email-verification.controller.js";
 import { emailVerificationRoutes } from "./email-verification.routes.js";
@@ -119,6 +122,9 @@ export function createIdentityModule({
             emailSender: identity.emailSender,
             monitor,
           }),
+        ),
+        audit: new AuditLogController(
+          new AuditLogService(new PrismaAuditLogRepository(database.client)),
         ),
         roles: new AdminRoleController(
           new AdminRoleService(new PrismaAdminRoleRepository(database.client), monitor),

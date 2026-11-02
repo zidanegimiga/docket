@@ -32,7 +32,13 @@ function snapshot(
   extra: Partial<Pick<AccessChangeSnapshot, "unknownRoleIds" | "otherActiveAdmins">> = {},
 ): AccessChangeSnapshot {
   return {
-    before: { id: targetId, status: before.status, roles: before.roles, directPermissions: [] },
+    before: {
+      id: targetId,
+      email: "x@example.com",
+      status: before.status,
+      roles: before.roles,
+      directPermissions: [],
+    },
     after: { status: before.status, roles: before.roles, directPermissions: [], ...after },
     unknownRoleIds: [],
     otherActiveAdmins: 1,

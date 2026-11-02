@@ -2,12 +2,14 @@ import type { ListUsersQuery, UpdateUserBody } from "@docket/contracts";
 
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import { ADMIN_ROLE } from "./admin-promotion.js";
+import { recordAuditEvents } from "./audit.repository.js";
 import type {
   AccessChangeSnapshot,
   AdminRole,
   AdminUserRecord,
   AdminUserRepository,
 } from "./admin-users.types.js";
+import type { NewAuditEvent } from "./audit.types.js";
 
 const adminUserColumns = {
   id: true,
@@ -69,7 +71,7 @@ export class PrismaAdminUserRepository implements AdminUserRepository {
   async updateAccess(
     id: string,
     change: UpdateUserBody,
-    check: (snapshot: AccessChangeSnapshot) => void,
+    decide: (snapshot: AccessChangeSnapshot) => NewAuditEvent[],
   ): Promise<AdminUserRecord | null> {
     // Inside the transaction every query is flat and awaited in turn: Prisma would otherwise load
     // sibling relations concurrently on the transaction's single connection, which pg deprecates.
@@ -78,7 +80,10 @@ export class PrismaAdminUserRepository implements AdminUserRepository {
       // the same moment are judged one after the other and the last-admin rule holds.
       await tx.$queryRaw`SELECT "id" FROM "roles" WHERE "name" = ${ADMIN_ROLE} FOR UPDATE`;
 
-      const user = await tx.user.findUnique({ where: { id }, select: { id: true, status: true } });
+      const user = await tx.user.findUnique({
+        where: { id },
+        select: { id: true, email: true, status: true },
+      });
       if (!user) return false;
 
       const currentRoles = await rolesWhere(tx, { users: { some: { userId: id } } });
@@ -102,7 +107,7 @@ export class PrismaAdminUserRepository implements AdminUserRepository {
         roles: currentRoles,
         directPermissions: currentGrants.map(({ permission }) => permission),
       };
-      check({
+      const events = decide({
         before,
         after: {
           status: change.status ?? user.status,
@@ -140,6 +145,7 @@ export class PrismaAdminUserRepository implements AdminUserRepository {
           data: change.directPermissions.map((permission) => ({ userId: id, permission })),
         });
       }
+      await recordAuditEvents(tx, events);
       return true;
     });
 
