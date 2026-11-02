@@ -11,6 +11,7 @@ import { LoggerMonitor } from "./core/monitoring/logger.monitor.js";
 import type { Monitor } from "./core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
 import { createRouter } from "./routes.js";
+import { memoryRateLimitStore } from "./shared/middleware/rate-limit.middleware.js";
 
 export interface Container {
   env: Env;
@@ -46,6 +47,8 @@ export async function createContainer(
         apiPrefix: env.PUBLIC_API_PREFIX,
       },
       webOrigin: env.WEB_ORIGIN,
+      // One API instance today; a shared store is needed once there are several.
+      rateLimits: { enabled: env.RATE_LIMIT_ENABLED, store: memoryRateLimitStore },
       refreshTokenTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
       refreshReuseGraceSeconds: env.REFRESH_REUSE_GRACE_SECONDS,
     }),

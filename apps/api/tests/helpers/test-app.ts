@@ -12,7 +12,14 @@ export const TEST_WEB_ORIGIN = "http://localhost:3000";
 
 const testSigningKey = await generateSigningKeyJwk();
 
-export function createTestContainer(overrides: IdentityOverrides = {}): Promise<Container> {
+/**
+ * The real app against docket_test. Rate limits are off because tests repeat the same requests
+ * from one address; pass `{ RATE_LIMIT_ENABLED: "true" }` in `env` to test them.
+ */
+export function createTestContainer(
+  overrides: IdentityOverrides = {},
+  env: Record<string, string> = {},
+): Promise<Container> {
   return createContainer(
     loadEnv({
       NODE_ENV: "test",
@@ -22,6 +29,8 @@ export function createTestContainer(overrides: IdentityOverrides = {}): Promise<
       AUTH_PRIVATE_KEY: testSigningKey,
       PUBLIC_API_PREFIX: "",
       REFRESH_REUSE_GRACE_SECONDS: "0",
+      RATE_LIMIT_ENABLED: "false",
+      ...env,
     }),
     overrides,
   );

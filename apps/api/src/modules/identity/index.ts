@@ -22,6 +22,7 @@ import { EmailVerificationService } from "./email-verification.service.js";
 import { OAuthController } from "./oauth.controller.js";
 import { oauthRoutes } from "./oauth.routes.js";
 import { OAuthService } from "./oauth.service.js";
+import type { RateLimitSettings } from "../../shared/middleware/rate-limit.middleware.js";
 import type { SessionCookieSettings } from "./session-cookies.js";
 import { PrismaRefreshTokenRepository } from "./session.repository.js";
 import { PrismaUserRepository } from "./user.repository.js";
@@ -40,6 +41,7 @@ export interface IdentityModuleDeps {
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
   authenticate: RequestHandler;
+  rateLimits: RateLimitSettings;
 }
 
 export interface IdentityModule {
@@ -61,6 +63,7 @@ export function createIdentityModule({
   refreshTokenTtlDays,
   refreshReuseGraceSeconds,
   authenticate,
+  rateLimits,
 }: IdentityModuleDeps): IdentityModule {
   const users = new PrismaUserRepository(database.client);
   const emailVerification = new EmailVerificationService({
@@ -92,6 +95,7 @@ export function createIdentityModule({
   const auth = authRoutes(
     new AuthController(authService, cookies, identity.oauthProviders),
     authenticate,
+    rateLimits,
   );
   auth.use(
     "/oauth",

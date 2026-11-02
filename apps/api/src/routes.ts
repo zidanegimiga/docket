@@ -13,6 +13,7 @@ import {
 } from "./modules/identity/session-cookies.js";
 import { createTicketModule } from "./modules/tickets/index.js";
 import { authenticate } from "./shared/middleware/authenticate.middleware.js";
+import type { RateLimitSettings } from "./shared/middleware/rate-limit.middleware.js";
 
 export interface RouterDeps {
   database: DatabaseProvider<PrismaClient>;
@@ -21,6 +22,7 @@ export interface RouterDeps {
   logger: Logger;
   cookies: SessionCookieSettings;
   webOrigin: string;
+  rateLimits: RateLimitSettings;
   refreshTokenTtlDays: number;
   refreshReuseGraceSeconds: number;
 }
