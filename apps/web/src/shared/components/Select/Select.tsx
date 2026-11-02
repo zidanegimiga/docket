@@ -1,6 +1,6 @@
-import { useId, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
-import { describedBy, Field, type FieldMessages } from "../Field";
+import { Field, useFieldControl, type FieldMessages } from "../Field";
 import styles from "./Select.module.css";
 
 export interface SelectOption {
@@ -14,18 +14,11 @@ interface SelectProps extends ComponentProps<"select">, FieldMessages {
 }
 
 export function Select({ label, hint, error, id, options, ...rest }: SelectProps) {
-  const generatedId = useId();
-  const selectId = id ?? generatedId;
+  const { field, control } = useFieldControl({ id, label, hint, error });
 
   return (
-    <Field id={selectId} label={label} hint={hint} error={error}>
-      <select
-        id={selectId}
-        className={styles.select}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(selectId, { hint, error })}
-        {...rest}
-      >
+    <Field {...field}>
+      <select {...control} className={styles.select} {...rest}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

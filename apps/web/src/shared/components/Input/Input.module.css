@@ -1,0 +1,40 @@
+.input {
+  composes: control from "../Field/Field.module.css";
+}
+
+/* With adornments the wrapper draws the box and shows the input's focus and error states. */
+.group {
+  display: flex;
+  align-items: stretch;
+  min-height: 2rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.group:has(> .bare:focus-visible) {
+  border-color: var(--color-accent);
+  outline: auto;
+  outline-offset: 0;
+}
+
+.group:has(> .bare[aria-invalid="true"]) {
+  border-color: var(--color-danger);
+}
+
+.bare {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  outline: none;
+}
+
+.adornment {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  color: var(--color-text-muted);
+}

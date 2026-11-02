@@ -1,25 +1,17 @@
-import { useId, type ComponentProps } from "react";
+import { Field, useFieldControl, type FieldMessages } from "../Field";
+import { Input, type InputProps } from "../Input";
 
-import { describedBy, Field, type FieldMessages } from "../Field";
-import styles from "./TextField.module.css";
-
-interface TextFieldProps extends ComponentProps<"input">, FieldMessages {
+export interface TextFieldProps extends InputProps, FieldMessages {
   label: string;
 }
 
+/** A labelled text input with hint and error. Specialised fields such as PasswordField wrap it. */
 export function TextField({ label, hint, error, id, ...rest }: TextFieldProps) {
-  const generatedId = useId();
-  const inputId = id ?? generatedId;
+  const { field, control } = useFieldControl({ id, label, hint, error });
 
   return (
-    <Field id={inputId} label={label} hint={hint} error={error}>
-      <input
-        id={inputId}
-        className={styles.input}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(inputId, { hint, error })}
-        {...rest}
-      />
+    <Field {...field}>
+      <Input {...control} {...rest} />
     </Field>
   );
 }
