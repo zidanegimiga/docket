@@ -27,6 +27,8 @@ describe("MainNav", () => {
     );
     expect(screen.getByRole("link", { name: "Tickets" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "Roles" })).toHaveAttribute("href", "/admin/roles");
+    // No audit:read, so no Audit link.
+    expect(screen.queryByRole("link", { name: "Audit" })).toBeNull();
   });
 
   it("stays out of the way when there is only one section", async () => {
