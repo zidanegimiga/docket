@@ -12,6 +12,7 @@ import { useState, type FormEvent } from "react";
 
 import { ApiError } from "@/shared/api/api-error";
 import { Button } from "@/shared/components/Button";
+import { PasswordField } from "@/shared/components/PasswordField";
 import { TextField } from "@/shared/components/TextField";
 import { toFieldErrors, type FieldErrors } from "@/shared/forms/field-errors";
 
@@ -91,9 +92,8 @@ export function SignUpForm() {
         required
         error={errors.email}
       />
-      <TextField
+      <PasswordField
         name="password"
-        type="password"
         label="Password"
         hint={`At least ${PASSWORD_MIN_LENGTH} characters. A few unrelated words work well.`}
         autoComplete="new-password"

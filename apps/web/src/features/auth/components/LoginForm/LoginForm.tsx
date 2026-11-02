@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/shared/components/Button";
+import { PasswordField } from "@/shared/components/PasswordField";
 import { TextField } from "@/shared/components/TextField";
 import { toFieldErrors, type FieldErrors } from "@/shared/forms/field-errors";
 
@@ -66,9 +67,8 @@ export function LoginForm({ returnTo }: LoginFormProps) {
         required
         error={errors.email}
       />
-      <TextField
+      <PasswordField
         name="password"
-        type="password"
         label="Password"
         autoComplete="current-password"
         required
