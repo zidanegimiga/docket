@@ -171,3 +171,24 @@ model VerificationToken {
   @@index([expiresAt])
   @@map("verification_tokens")
 }
+
+/// Administrative changes, append-only (a trigger refuses updates and deletes). Actor and target
+/// are not foreign keys: entries must outlive the users and roles they mention.
+model AuditEvent {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  occurredAt  DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  /// Null when the change came from the command line.
+  actorId     String?  @map("actor_id") @db.Uuid
+  action      String   @db.VarChar(50)
+  targetType  String   @map("target_type") @db.VarChar(20)
+  targetId    String   @map("target_id") @db.Uuid
+  /// The target's name or email at the time, so the entry reads well after renames or deletion.
+  targetLabel String   @map("target_label") @db.VarChar(254)
+  changes     Json
+  requestId   String?  @map("request_id") @db.VarChar(128)
+
+  @@index([occurredAt])
+  @@index([targetType, targetId])
+  @@index([actorId])
+  @@map("audit_events")
+}
