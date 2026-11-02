@@ -78,4 +78,5 @@ npm run db:migrate -w @docket/api -- --name <change>         # new migration
 npm run db:generate -w @docket/api                           # regenerate the Prisma client
 npm run auth:keys -w @docket/api                             # new token signing key
 npm run admin:promote -w @docket/api -- --email <address>    # make an account administrator
+npm run tokens:cleanup -w @docket/api                        # delete long-expired tokens now
 ```

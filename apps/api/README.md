@@ -167,6 +167,18 @@ broken deploy fails before it accepts traffic. On SIGTERM or SIGINT it stops acc
 connections, drains in-flight requests, disconnects from the database and lets the process exit
 naturally. A ten second timer forces the exit if something hangs.
 
+### Background jobs
+
+`server.ts` also runs scheduled work through a `Scheduler` (`core/jobs/`), currently one job:
+deleting refresh and verification tokens that expired more than a day ago, a minute after start
+and then every `TOKEN_CLEANUP_INTERVAL_MINUTES`. Runs never overlap, failures are reported and the
+schedule continues, and shutdown waits for a run in progress. Tests never start the scheduler.
+To run the job by hand, or from an external cron with the interval set to `0`:
+
+```bash
+npm run tokens:cleanup -w @docket/api
+```
+
 ## Data model
 
 ```prisma
@@ -322,6 +334,7 @@ Set `TEST_DATABASE_URL` to use a different database.
 | `LOG_LEVEL`                                | `info`                  | `fatal` to `trace`, or `silent`                                                                                        |
 | `TRUST_PROXY_HOPS`                         | `1`                     | Proxies in front of the API, used to find the client IP for rate limits. Production behind Vercel and Render needs `4` |
 | `RATE_LIMIT_ENABLED`                       | `true`                  | Rate limits on login and sign-up; tests switch them off                                                                |
+| `TOKEN_CLEANUP_INTERVAL_MINUTES`           | `360`                   | How often the API deletes long-expired tokens; `0` turns the schedule off                                              |
 | `WEB_ORIGIN`                               | `http://localhost:3000` | The web app's origin, for the Origin check and OAuth redirects                                                         |
 | `PUBLIC_API_PREFIX`                        | `/api`                  | Path under which browsers reach the API (the web app's rewrite); scopes the refresh cookie                             |
 | `AUTH_PRIVATE_KEY`                         | none                    | Ed25519 signing key (`npm run auth:keys -w @docket/api`); required in production                                       |
