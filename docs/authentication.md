@@ -110,6 +110,9 @@ Over HTTPS the names carry the `__Host-` or `__Secure-` prefix. All are `SameSit
 - Refresh tokens rotate on every use within a token family. Presenting a rotated token again
   within 30 seconds is treated as a second tab racing (`SESSION_ROTATED`, retry); after that it is
   treated as theft and the whole family is revoked.
+- Expired refresh and verification tokens are deleted a day after they expire, by a job the API
+  runs every six hours. Rotated tokens are kept until then on purpose: finding a replayed old
+  token is how theft is detected.
 - The session hint exists because page requests never carry the refresh cookie. It lets the web
   app's proxy tell a lapsed access token from a visitor who never signed in.
 - State-changing requests that carry cookies must also carry an `Origin` (or `Sec-Fetch-Site`)
