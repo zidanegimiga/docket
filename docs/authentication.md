@@ -145,13 +145,13 @@ Permission-based role-based access control, deny by default.
 
 ## Administration
 
-| Endpoint                 | Needs          | Purpose                                                        |
-| ------------------------ | -------------- | -------------------------------------------------------------- |
-| `GET /admin/users`       | `users:read`   | Filter by status, search, pending first, paginated             |
-| `PATCH /admin/users/:id` | `users:manage` | Approve, disable or re-enable; replace roles and direct grants |
-| `GET /admin/roles`       | `users:read`   | Roles with permissions and user counts, for assigning them     |
-| Role management          | `roles:manage` | Planned                                                        |
-| Audit log                | `audit:read`   | Planned                                                        |
+| Endpoint                                                   | Needs          | Purpose                                                        |
+| ---------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
+| `GET /admin/users`                                         | `users:read`   | Filter by status, search, pending first, paginated             |
+| `PATCH /admin/users/:id`                                   | `users:manage` | Approve, disable or re-enable; replace roles and direct grants |
+| `GET /admin/roles`                                         | `users:read`   | Roles with permissions and user counts, for assigning them     |
+| `POST /admin/roles`, `PATCH` and `DELETE /admin/roles/:id` | `roles:manage` | Create, rename, describe, change and delete roles              |
+| Audit log                                                  | `audit:read`   | Planned                                                        |
 
 Changes to a user are checked and written in one transaction. Administrators cannot disable
 themselves or remove their own `users:manage`, and the last active administrator cannot be
@@ -159,8 +159,15 @@ disabled or lose the admin role; concurrent changes are serialised so two admini
 demote each other at once. Disabling revokes the user's refresh tokens immediately, and their
 next request with a still-valid access token signs them out. Approval emails the user.
 
+Roles follow their own rules: names are unique regardless of case, the built-in `admin` and
+`member` roles keep their names and cannot be deleted, `admin` always holds every permission, and a
+role somebody holds cannot be deleted. Changes reach the people holding a role at their next
+refresh.
+
 The web app's `/admin/users` page lists users, approves pending ones in one click and edits status,
-roles and extra permissions. People with `users:read` but not `users:manage` see it read-only.
+roles and extra permissions. `/admin/roles` creates, edits and deletes roles, with the built-in
+rules reflected in the editor. People with `users:read` see both; changing anything needs
+`users:manage` or `roles:manage`.
 
 The first administrator is made from the command line, by someone with database access, after
 signing up normally:
