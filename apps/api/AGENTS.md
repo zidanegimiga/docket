@@ -79,4 +79,5 @@ npm run db:generate -w @docket/api                           # regenerate the Pr
 npm run auth:keys -w @docket/api                             # new token signing key
 npm run admin:promote -w @docket/api -- --email <address>    # make an account administrator
 npm run tokens:cleanup -w @docket/api                        # delete long-expired tokens now
+npm run db:seed -w @docket/api                               # local sample data (refuses remote databases)
 ```

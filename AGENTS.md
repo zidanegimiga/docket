@@ -13,6 +13,7 @@ npm install
 docker compose up -d db                      # PostgreSQL on localhost:5432
 cp apps/api/.env.example apps/api/.env
 npm run db:deploy -w @docket/api             # apply migrations
+npm run db:seed -w @docket/api               # sample tickets and admin, member, pending accounts
 npm run dev                                  # API on :4000, web on :3000
 ```
 

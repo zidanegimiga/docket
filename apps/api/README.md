@@ -30,6 +30,9 @@ npm run db:deploy -w @docket/api
 npm run dev -w @docket/api
 ```
 
+`npm run db:seed -w @docket/api` adds sample tickets and three sign-in accounts (see the
+[project README](../../README.md#quick-start)); it refuses any database that is not local.
+
 The API listens on <http://localhost:4000>. Use `npm run db:migrate -w @docket/api` to create a
 new migration after changing `prisma/schema.prisma`.
 

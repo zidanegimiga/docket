@@ -38,7 +38,21 @@ npm run db:deploy -w @docket/api
 npm run dev
 ```
 
-Sign up at <http://localhost:3000/signup>, then make that account the first administrator:
+To try it straight away, add sample tickets and three accounts:
+
+```bash
+npm run db:seed -w @docket/api
+```
+
+| Account               | Password                | Can                                             |
+| --------------------- | ----------------------- | ----------------------------------------------- |
+| `admin@docket.test`   | `docket local password` | Everything, including users, roles, audit       |
+| `member@docket.test`  | `docket local password` | View and create tickets, update their own       |
+| `pending@docket.test` | `docket local password` | Nothing until approved; sees the waiting screen |
+
+The seed only runs against a local database, since the password is public, and running it again
+adds nothing. To use your own account instead, sign up at <http://localhost:3000/signup> and make it
+an administrator:
 
 ```bash
 npm run admin:promote -w @docket/api -- --email you@example.com
