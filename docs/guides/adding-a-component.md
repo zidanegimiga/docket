@@ -47,6 +47,32 @@ Import through the folder: `import { TicketTable } from "../TicketTable";`.
 - **Read server data from the query cache**, not local state, when it can change elsewhere. That
   is how optimistic updates and rollbacks show up with no extra code.
 
+## Form fields
+
+Labelled controls are built in layers, so a new kind of field is a small wrapper rather than a new
+copy of the label, hint, error and ARIA wiring:
+
+| Layer                             | Does                                                                                      |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `useFieldControl()`               | One id linking label, control, hint and error, plus `aria-invalid` and `aria-describedby` |
+| `Field`                           | Renders the label, then the control, then the hint or the error                           |
+| `Input`                           | The styled text input, with optional `start` and `end` slots inside its border            |
+| `TextField`, `TextArea`, `Select` | `Field` plus a control, wired by `useFieldControl()`                                      |
+| `PasswordField`                   | `TextField` plus a show and hide button in the `end` slot                                 |
+
+To add a specialised field (search with a clear button, an amount with a currency, a number with
+steppers), wrap `TextField` and fill a slot, the way `PasswordField` does:
+
+```tsx
+export function AmountField({ currency, ...rest }: Omit<TextFieldProps, "start">) {
+  return <TextField {...rest} inputMode="decimal" start={currency} />;
+}
+```
+
+For a control that is not a text input (a date picker, a combobox), use `useFieldControl()` with
+`Field` directly, as `Select` does. Buttons inside a field need `type="button"` so they never
+submit the form, and an accessible name that contains their visible text.
+
 ## Styling
 
 - Use the tokens in `src/shared/styles/tokens.css` (`var(--space-3)`, `var(--color-text-muted)`)

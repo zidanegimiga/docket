@@ -61,8 +61,10 @@ features/<feature>/components/<Name>/         Name.tsx, Name.module.css, index.t
 
 - One `.module.css` per component, using the tokens in `shared/styles/tokens.css`. No new colours,
   sizes or fonts outside the tokens; light and dark mode both come from them.
-- Keep the plain, dense look of the existing screens. Reuse `Button`, `TextField`, `Select`,
-  `TextArea` and `Field` rather than styling raw elements.
+- Keep the plain, dense look of the existing screens. Reuse `Button`, `TextField`,
+  `PasswordField`, `Select`, `TextArea` and `Field` rather than styling raw elements. New kinds of
+  field wrap `TextField` and use its `start` or `end` slot, or build on `useFieldControl()`; see
+  "Form fields" in `docs/guides/adding-a-component.md`.
 - Every control has a visible label or an accessible name, errors are linked with
   `aria-describedby`, and status messages use `role="status"` or `role="alert"`.
 
