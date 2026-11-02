@@ -146,6 +146,7 @@ model RefreshToken {
 
   @@index([familyId])
   @@index([userId])
+  @@index([expiresAt])
   @@map("refresh_tokens")
 }
 
@@ -167,5 +168,6 @@ model VerificationToken {
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose])
+  @@index([expiresAt])
   @@map("verification_tokens")
 }
