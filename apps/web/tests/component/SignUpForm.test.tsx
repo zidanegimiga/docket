@@ -38,4 +38,25 @@ describe("SignUpForm", () => {
       "Use at least 12 characters",
     );
   });
+
+  it("passes on the API's advice when sign-ups are rate limited", async () => {
+    server.use(
+      http.post("/api/auth/signup", () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "RATE_LIMITED",
+              message: "Too many sign-ups for this email address. Try again in 41 minutes.",
+            },
+          },
+          { status: 429 },
+        ),
+      ),
+    );
+
+    renderWithClient(<SignUpForm />);
+    await fillIn("violet harbour lantern");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Try again in 41 minutes.");
+  });
 });

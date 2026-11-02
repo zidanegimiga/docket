@@ -4,7 +4,6 @@ import { logInSchema, type LogInInput } from "@docket/contracts";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { ApiError } from "@/shared/api/api-error";
 import { Button } from "@/shared/components/Button";
 import { TextField } from "@/shared/components/TextField";
 import { toFieldErrors, type FieldErrors } from "@/shared/forms/field-errors";
@@ -52,7 +51,7 @@ export function LoginForm({ returnTo }: LoginFormProps) {
         router.refresh();
       },
       onError: (error) => {
-        setFormError(credentialErrorMessage(error instanceof ApiError ? error.code : ""));
+        setFormError(credentialErrorMessage(error));
       },
     });
   };

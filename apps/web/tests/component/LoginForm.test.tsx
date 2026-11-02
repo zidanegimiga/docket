@@ -70,4 +70,26 @@ describe("LoginForm", () => {
     );
     expect(screen.getByLabelText("Password")).toHaveAccessibleDescription("Password is required");
   });
+
+  it("passes on the API's advice when sign-in attempts are rate limited", async () => {
+    server.use(
+      http.post("/api/auth/login", () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "RATE_LIMITED",
+              message:
+                "Too many failed sign-in attempts for this account. Try again in 12 minutes.",
+            },
+          },
+          { status: 429 },
+        ),
+      ),
+    );
+
+    renderWithClient(<LoginForm returnTo="/" />);
+    await fillIn("ada@example.com", "guess");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Try again in 12 minutes.");
+  });
 });

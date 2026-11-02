@@ -16,6 +16,7 @@ import { TextField } from "@/shared/components/TextField";
 import { toFieldErrors, type FieldErrors } from "@/shared/forms/field-errors";
 
 import { useSignUp } from "../../hooks/useSignUp";
+import { signUpErrorMessage } from "../../messages";
 import formStyles from "../auth-form.module.css";
 import styles from "./SignUpForm.module.css";
 
@@ -66,11 +67,7 @@ export function SignUpForm() {
           setErrors(toFieldErrors(issues, FIELDS, "body."));
           return;
         }
-        setFormError(
-          error instanceof ApiError && error.code === "NETWORK_ERROR"
-            ? "Could not reach the server. Check your connection."
-            : "Your account could not be created. Try again.",
-        );
+        setFormError(signUpErrorMessage(error));
       },
     });
   };
