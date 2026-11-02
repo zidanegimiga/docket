@@ -16,6 +16,7 @@ const envSchema = z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
+    RATE_LIMIT_ENABLED: z.stringbool().default(true),
 
     WEB_ORIGIN: httpUrl.transform((url) => new URL(url).origin).default("http://localhost:3000"),
     PUBLIC_API_PREFIX: z
