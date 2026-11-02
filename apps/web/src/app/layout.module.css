@@ -1,5 +1,32 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
 .main {
+  width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
   padding: var(--space-6) var(--space-4) var(--space-8);
+}
+
+/*
+ * Wide screens fit the app to the window: the header and each page's title and toolbars stay in
+ * place while lists scroll inside their own boundaries. Pages opt in by filling .main (flex: 1;
+ * min-height: 0) and giving their scrolling region min-height: 0 and overflow: auto. Narrow
+ * screens keep ordinary page scrolling, where nested scroll areas are awkward to use.
+ */
+@media (width >= 60rem) {
+  .shell {
+    height: 100dvh;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: var(--space-4);
+  }
 }

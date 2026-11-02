@@ -24,3 +24,13 @@
   padding: var(--space-4);
   color: var(--color-text-muted);
 }
+
+/* Fit to the window: the toolbar and pager stay put and the table between them scrolls. */
+@media (width >= 60rem) {
+  .list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+}

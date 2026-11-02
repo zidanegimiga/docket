@@ -21,9 +21,11 @@ export default async function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <SessionGate nav={<MainNav />} mainClassName={styles.main}>
-        {children}
-      </SessionGate>
+      <div className={styles.shell}>
+        <SessionGate nav={<MainNav />} mainClassName={styles.main}>
+          {children}
+        </SessionGate>
+      </div>
     </HydrationBoundary>
   );
 }
