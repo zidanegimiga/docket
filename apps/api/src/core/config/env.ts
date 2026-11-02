@@ -17,6 +17,8 @@ const envSchema = z
       .default("info"),
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
     RATE_LIMIT_ENABLED: z.stringbool().default(true),
+    // 0 turns the in-process schedule off, for example when an external cron runs the script.
+    TOKEN_CLEANUP_INTERVAL_MINUTES: z.coerce.number().int().min(0).max(10_080).default(360),
 
     WEB_ORIGIN: httpUrl.transform((url) => new URL(url).origin).default("http://localhost:3000"),
     PUBLIC_API_PREFIX: z

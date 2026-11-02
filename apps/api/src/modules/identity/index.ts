@@ -25,6 +25,8 @@ import { OAuthService } from "./oauth.service.js";
 import type { RateLimitSettings } from "../../shared/middleware/rate-limit.middleware.js";
 import type { SessionCookieSettings } from "./session-cookies.js";
 import { PrismaRefreshTokenRepository } from "./session.repository.js";
+import { PrismaTokenCleanupRepository } from "./token-cleanup.repository.js";
+import { TokenCleanupService, type TokenCleanupResult } from "./token-cleanup.service.js";
 import { PrismaUserRepository } from "./user.repository.js";
 import { PrismaVerificationTokenRepository } from "./verification.repository.js";
 import { WellKnownController } from "./well-known.controller.js";
@@ -125,4 +127,24 @@ export function createIdentityModule({
       authenticate,
     ),
   };
+}
+
+export interface IdentityJobsDeps {
+  database: DatabaseProvider<PrismaClient>;
+  logger: Logger;
+  monitor: Monitor;
+}
+
+/** Background work the identity module needs; scheduled by the server or run by a script. */
+export interface IdentityJobs {
+  cleanupTokens(): Promise<TokenCleanupResult>;
+}
+
+export function createIdentityJobs({ database, logger, monitor }: IdentityJobsDeps): IdentityJobs {
+  const cleanup = new TokenCleanupService({
+    tokens: new PrismaTokenCleanupRepository(database.client),
+    logger: logger.child({ job: "token-cleanup" }),
+    monitor,
+  });
+  return { cleanupTokens: () => cleanup.run() };
 }

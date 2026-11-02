@@ -2,6 +2,7 @@ import type { Server } from "node:http";
 
 import { createContainer } from "./container.js";
 import { loadEnv } from "./core/config/env.js";
+import { TimerScheduler } from "./core/jobs/timer.scheduler.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -13,9 +14,16 @@ function closeServer(server: Server): Promise<void> {
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const { app, database, logger } = await createContainer(env);
+  const { app, database, logger, monitor, jobs } = await createContainer(env);
 
   await database.connect();
+
+  const scheduler = new TimerScheduler(logger.child({ component: "scheduler" }), monitor);
+  if (env.TOKEN_CLEANUP_INTERVAL_MINUTES > 0) {
+    scheduler.every("token-cleanup", env.TOKEN_CLEANUP_INTERVAL_MINUTES * 60_000, async () => {
+      await jobs.cleanupTokens();
+    });
+  }
 
   const server = app.listen(env.PORT, () => {
     logger.info("Server listening", { port: env.PORT, nodeEnv: env.NODE_ENV });
@@ -36,6 +44,7 @@ async function main(): Promise<void> {
 
     try {
       await closeServer(server);
+      await scheduler.stop();
       await database.disconnect();
       logger.info("Shutdown complete");
     } catch (error) {

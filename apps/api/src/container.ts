@@ -10,6 +10,7 @@ import { PinoLogger } from "./core/logger/pino.logger.js";
 import { LoggerMonitor } from "./core/monitoring/logger.monitor.js";
 import type { Monitor } from "./core/monitoring/monitor.interface.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
+import { createIdentityJobs, type IdentityJobs } from "./modules/identity/index.js";
 import { createRouter } from "./routes.js";
 import { memoryRateLimitStore } from "./shared/middleware/rate-limit.middleware.js";
 
@@ -19,6 +20,7 @@ export interface Container {
   monitor: Monitor;
   database: DatabaseProvider<PrismaClient>;
   identity: Identity;
+  jobs: IdentityJobs;
   app: Express;
 }
 
@@ -56,5 +58,7 @@ export async function createContainer(
     allowedOrigins: [env.WEB_ORIGIN],
   });
 
-  return { env, logger, monitor, database, identity, app };
+  const jobs = createIdentityJobs({ database, logger, monitor });
+
+  return { env, logger, monitor, database, identity, jobs, app };
 }
