@@ -178,7 +178,7 @@ Permission-based role-based access control, deny by default.
 | `PATCH /admin/users/:id`                                   | `users:manage` | Approve, disable or re-enable; replace roles and direct grants |
 | `GET /admin/roles`                                         | `users:read`   | Roles with permissions and user counts, for assigning them     |
 | `POST /admin/roles`, `PATCH` and `DELETE /admin/roles/:id` | `roles:manage` | Create, rename, describe, change and delete roles              |
-| Audit log                                                  | `audit:read`   | Planned                                                        |
+| `GET /admin/audit`                                         | `audit:read`   | Every change to users and roles, filterable by kind and target |
 
 Changes to a user are checked and written in one transaction. Administrators cannot disable
 themselves or remove their own `users:manage`, and the last active administrator cannot be
@@ -191,9 +191,16 @@ Roles follow their own rules: names are unique regardless of case, the built-in 
 role somebody holds cannot be deleted. Changes reach the people holding a role at their next
 refresh.
 
+Every change is written to an audit log in the same transaction as the change itself, so one
+never exists without the other: who made it (or the command line, for `admin:promote`), what
+changed (status from and to, roles and permissions added and removed, role renames), the target's
+name at the time, and the request id that links the entry to the API's logs. Saves that change
+nothing, and refused changes, record nothing. A database trigger refuses updates and deletes on the
+table, so entries cannot be rewritten, even by the application.
+
 The web app's `/admin/users` page lists users, approves pending ones in one click and edits status,
 roles and extra permissions. `/admin/roles` creates, edits and deletes roles, with the built-in
-rules reflected in the editor. People with `users:read` see both; changing anything needs
+rules reflected in the editor. `/admin/audit` shows the log to people with `audit:read`. People with `users:read` see both; changing anything needs
 `users:manage` or `roles:manage`.
 
 The first administrator is made from the command line, by someone with database access, after
