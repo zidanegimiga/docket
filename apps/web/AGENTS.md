@@ -57,6 +57,15 @@ features/<feature>/components/<Name>/         Name.tsx, Name.module.css, index.t
 - The Content Security Policy in `shared/config/security-headers.ts` allows no inline styles or
   third-party origins in production. Zod runs in `jitless` mode for the same reason.
 
+## Fitting the window
+
+From 60rem wide the app fills the window and lists scroll inside their own boxes; below that the
+page scrolls. A new page under `(app)` that holds a long list should do the same: give its root
+`flex: 1; min-height: 0` inside `@media (width >= 60rem)`, keep titles and toolbars outside the
+scrolling region, and let the region scroll with `min-height: 0; overflow: auto`. Copy the ticket
+page or `features/admin/components/list-layout.module.css`. Sticky table headings need a
+background and a box-shadow in place of the bottom border.
+
 ## Styling
 
 - One `.module.css` per component, using the tokens in `shared/styles/tokens.css`. No new colours,

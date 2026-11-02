@@ -138,6 +138,19 @@ Changing a status updates the row immediately. `useUpdateTicket`:
 The status select reads its value from the cache, so the optimistic value and the rollback show
 without local state. Stats are not patched optimistically; they refresh a moment later.
 
+## Fitting the window
+
+On screens 60rem and wider the signed-in app fills the window exactly: the header, page titles,
+toolbars and pagers stay in place, and each list scrolls inside its own box with its column
+headings pinned. Side panels such as the new ticket form and the admin editors scroll on their
+own when they are taller than the window. Narrower screens scroll the page as usual, since nested
+scroll areas are awkward on phones.
+
+`app/layout.module.css` sets up the shell. A page takes part by filling `.main` with
+`flex: 1; min-height: 0`, and by giving its scrolling region `min-height: 0` and `overflow: auto`.
+The ticket and admin tables use `flex: 0 1 auto`, so a short list stays its natural height
+rather than stretching.
+
 ## Components and styling
 
 - Every component is a folder with `<Name>.tsx`, `<Name>.module.css` and `index.ts`. Shared ones
