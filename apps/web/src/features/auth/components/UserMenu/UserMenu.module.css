@@ -13,3 +13,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The name is a nicety; on phones the sign-out button needs the room. It stays in the title. */
+@media (max-width: 40rem) {
+  .name {
+    display: none;
+  }
+}

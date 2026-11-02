@@ -20,3 +20,12 @@
   border-bottom-color: var(--color-accent);
   color: var(--color-text);
 }
+
+/* On phones the links take their own row under the brand and the user menu. */
+@media (max-width: 40rem) {
+  .nav {
+    order: 1;
+    width: 100%;
+    margin-left: 0;
+  }
+}
