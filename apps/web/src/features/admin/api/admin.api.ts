@@ -1,5 +1,8 @@
 import {
   adminUserSchema,
+  auditListSchema,
+  type AuditList,
+  type ListAuditQuery,
   roleListSchema,
   roleSchema,
   type CreateRoleInput,
@@ -58,4 +61,17 @@ export async function updateRole(id: string, change: UpdateRoleInput): Promise<R
 
 export async function deleteRole(id: string): Promise<void> {
   await request<void>(`/admin/roles/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listAuditEvents(
+  { action, targetId, page, limit }: ListAuditQuery,
+  signal?: AbortSignal,
+  context: RequestContext = {},
+): Promise<AuditList> {
+  const data = await request<unknown>("/admin/audit", {
+    ...context,
+    query: { action, targetId, page, limit },
+    ...(signal && { signal }),
+  });
+  return auditListSchema.parse(data);
 }
