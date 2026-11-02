@@ -26,3 +26,7 @@ services:
         value: production
       - key: LOG_LEVEL
         value: info
+      # Requests arrive through Vercel, Render's edge and Render's load balancer; the client IP
+      # used by rate limits is four hops back. With fewer, every user shares one address.
+      - key: TRUST_PROXY_HOPS
+        value: "4"

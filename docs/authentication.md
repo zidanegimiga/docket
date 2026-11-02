@@ -115,6 +115,30 @@ Over HTTPS the names carry the `__Host-` or `__Secure-` prefix. All are `SameSit
 - State-changing requests that carry cookies must also carry an `Origin` (or `Sec-Fetch-Site`)
   matching the web app, which closes cross-site request forgery.
 
+### Rate limits
+
+Login and sign-up are rate limited, with `429 RATE_LIMITED` and standard `RateLimit` headers when
+a limit is reached. The message says when to try again and the web forms show it.
+
+| Rule              | Limit              | Counts                      |
+| ----------------- | ------------------ | --------------------------- |
+| Login per account | 10 per 15 minutes  | Failed attempts only        |
+| Login per IP      | 100 per 15 minutes | Failed attempts only        |
+| Sign-up per email | 3 per hour         | Every attempt (each emails) |
+| Sign-up per IP    | 20 per hour        | Every attempt               |
+
+The account rules are the main defence: they hold whatever proxies sit in front of the API, and
+unknown emails count exactly like real ones, so a limit never reveals whether an account exists.
+The IP rules only catch floods from one source and depend on `TRUST_PROXY_HOPS` matching the
+proxy chain. In production a request passes Vercel, Render's edge and Render's load balancer, so
+the setting is `4`; with fewer, every user would appear to share one address and the IP limits
+would apply to everyone at once. Someone calling the API directly can still choose the address the
+IP rules see, which is why they are not the main defence.
+
+Counters live in memory, which suits the single API instance. Several instances need a shared
+store: the middleware takes its store from the composition root, so this is a one-line change to
+a Redis-backed store.
+
 ### In the web app
 
 - `src/proxy.ts` redirects page requests without any session cookie to `/login?returnTo=...`. It
