@@ -90,8 +90,10 @@ docs/                     Design notes and step-by-step guides
 - **Cookie requests need an Origin.** The API rejects state-changing requests that carry cookies
   without a matching `Origin` or `Sec-Fetch-Site`. In API tests use bearer headers from the
   `signIn` helper, or set `Origin: TEST_WEB_ORIGIN` on agents that log in with cookies.
-- **Moving or adding Next.js route folders** sometimes leaves a running `next dev` serving stale
-  layouts. Restart it before debugging what looks like a rendering bug.
+- **Stale `next dev` cache.** Moving route folders, or renaming, moving or deleting a CSS
+  Module, can leave the dev server rendering old layouts or old class names; styles then vanish
+  on refresh and return after a hot reload. Stop `next dev`, delete `apps/web/.next/dev` and start
+  it again before debugging what looks like a rendering bug. Production builds are not affected.
 - **Dates render in UTC** on purpose, so server and client markup match. Use
   `shared/format/date.ts`; never format with the browser's locale during render.
 
