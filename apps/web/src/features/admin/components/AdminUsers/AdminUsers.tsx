@@ -18,7 +18,7 @@ import { updateUserErrorMessage } from "../../messages";
 import { parseUserListView, userListHref, type UserListView } from "../../user-query";
 import { UserEditor } from "../UserEditor";
 import { UserTable } from "../UserTable";
-import styles from "./AdminUsers.module.css";
+import styles from "../list-layout.module.css";
 
 function emptyMessage({ status, search }: UserListView): string {
   if (search) return `No users match "${search}".`;

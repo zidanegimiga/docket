@@ -12,6 +12,7 @@ import styles from "./MainNav.module.css";
 const links: { href: string; label: string; permission: Permission }[] = [
   { href: "/", label: "Tickets", permission: "tickets:read" },
   { href: "/admin/users", label: "Users", permission: "users:read" },
+  { href: "/admin/roles", label: "Roles", permission: "users:read" },
 ];
 
 /** The signed-in app's sections, each shown only to people who can use it. */

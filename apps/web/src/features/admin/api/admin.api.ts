@@ -1,6 +1,10 @@
 import {
   adminUserSchema,
   roleListSchema,
+  roleSchema,
+  type CreateRoleInput,
+  type Role,
+  type UpdateRoleInput,
   userListSchema,
   type AdminUser,
   type ListUsersQuery,
@@ -38,4 +42,20 @@ export async function listRoles(
 ): Promise<RoleList> {
   const data = await request<unknown>("/admin/roles", { ...context, ...(signal && { signal }) });
   return roleListSchema.parse(data);
+}
+
+export async function createRole(input: CreateRoleInput): Promise<Role> {
+  return roleSchema.parse(await request<unknown>("/admin/roles", { method: "POST", body: input }));
+}
+
+export async function updateRole(id: string, change: UpdateRoleInput): Promise<Role> {
+  const data = await request<unknown>(`/admin/roles/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: change,
+  });
+  return roleSchema.parse(data);
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  await request<void>(`/admin/roles/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

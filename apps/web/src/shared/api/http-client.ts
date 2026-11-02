@@ -6,7 +6,7 @@ import { refreshSession, sessionExpired } from "./session";
 type QueryValue = string | number | boolean | undefined;
 
 export interface RequestOptions extends RequestContext {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   query?: Record<string, QueryValue>;
   body?: unknown;
   signal?: AbortSignal;

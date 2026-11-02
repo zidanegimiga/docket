@@ -47,28 +47,6 @@
   font-weight: 600;
 }
 
-.option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-}
-
-.option input {
-  margin: 0.2rem 0 0;
-}
-
-.optionName {
-  display: block;
-  font-weight: 500;
-}
-
-.optionHint {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
 .actions {
   display: flex;
   align-items: center;
@@ -105,4 +83,10 @@
   gap: var(--space-1);
   margin: 0;
   padding-left: var(--space-4);
+}
+
+.danger {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
 }

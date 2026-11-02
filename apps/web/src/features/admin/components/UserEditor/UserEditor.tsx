@@ -2,10 +2,8 @@
 
 import {
   PERMISSION_DESCRIPTIONS,
-  PERMISSIONS,
   USER_STATUSES,
   type AdminUser,
-  type Permission,
   type Role,
   type UserStatus,
 } from "@docket/contracts";
@@ -18,7 +16,9 @@ import { Select } from "@/shared/components/Select";
 import { useUpdateUser } from "../../hooks/useUpdateUser";
 import { userStatusLabels } from "../../labels";
 import { updateUserErrorMessage } from "../../messages";
-import styles from "./UserEditor.module.css";
+import { CheckboxOption } from "../CheckboxOption";
+import styles from "../editor.module.css";
+import { PermissionChecklist, readPermissions } from "../PermissionChecklist";
 
 interface UserEditorProps {
   user: AdminUser;
@@ -30,49 +30,12 @@ interface UserEditorProps {
 
 const statusOptions = USER_STATUSES.map((value) => ({ value, label: userStatusLabels[value] }));
 
-interface CheckboxOptionProps {
-  name: string;
-  value: string;
-  label: string;
-  hint?: string | null;
-  defaultChecked: boolean;
-}
-
-/** The label names the checkbox; the hint is linked as its description, not part of its name. */
-function CheckboxOption({ name, value, label, hint, defaultChecked }: CheckboxOptionProps) {
-  const id = useId();
-  const hintId = `${id}-hint`;
-
-  return (
-    <div className={styles.option}>
-      <input
-        id={id}
-        type="checkbox"
-        name={name}
-        value={value}
-        defaultChecked={defaultChecked}
-        aria-describedby={hint ? hintId : undefined}
-      />
-      <div>
-        <label htmlFor={id} className={styles.optionName}>
-          {label}
-        </label>
-        {hint && (
-          <span id={hintId} className={styles.optionHint}>
-            {hint}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function readForm(form: HTMLFormElement) {
   const data = new FormData(form);
   return {
     status: data.get("status") as UserStatus,
     roleIds: data.getAll("roleIds").map(String),
-    directPermissions: data.getAll("directPermissions").map(String) as Permission[],
+    directPermissions: readPermissions(data, "directPermissions"),
   };
 }
 
@@ -137,16 +100,7 @@ export function UserEditor({ user, roles, canManage, closeHref }: UserEditorProp
           <fieldset className={styles.group}>
             <legend>Extra permissions</legend>
             <p className={styles.muted}>Granted on top of the roles above.</p>
-            {PERMISSIONS.map((permission) => (
-              <CheckboxOption
-                key={permission}
-                name="directPermissions"
-                value={permission}
-                label={permission}
-                hint={PERMISSION_DESCRIPTIONS[permission]}
-                defaultChecked={user.directPermissions.includes(permission)}
-              />
-            ))}
+            <PermissionChecklist name="directPermissions" checked={user.directPermissions} />
           </fieldset>
         </fieldset>
 

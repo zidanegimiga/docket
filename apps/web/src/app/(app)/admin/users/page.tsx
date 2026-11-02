@@ -8,7 +8,7 @@ import { RequirePermission } from "@/features/auth/components/RequirePermission"
 import { serverRequestContext } from "@/features/auth/server-session";
 import { getQueryClient } from "@/shared/query/query-client";
 
-import styles from "./page.module.css";
+import styles from "../admin-page.module.css";
 
 export const metadata: Metadata = { title: "Users · Docket" };
 
